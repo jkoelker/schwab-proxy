@@ -1,0 +1,27 @@
+---
+name: Auto Labeler
+
+"on":
+  # pull_request_target event is required for autolabeler to support all PRs
+  # including forks
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - edited
+      - synchronize
+
+jobs:
+  main:
+    name: Auto label pull requests
+
+    runs-on: ubuntu-latest
+
+    steps:
+      # yamllint disable-line rule:line-length rule:comments
+      - uses: release-drafter/release-drafter@b1476f6e6eb133afa41ed8589daba6dc69b4d3f5 # v6.1.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          config-name: release-drafter.yaml
+          disable-releaser: true

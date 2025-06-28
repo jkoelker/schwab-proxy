@@ -1,0 +1,20 @@
+# devkit image proxy files
+.devkit*
+
+# cache files
+.cache
+
+# binaries
+bin/
+
+# coverage files
+coverage.*
+
+# the local database for testing
+.schwab_data/
+
+# the test_client token file
+schwab_token.json
+
+# reference materials
+info/

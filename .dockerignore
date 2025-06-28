@@ -1,0 +1,56 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# Development files
+.env
+.env.*
+*.log
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test files
+*_test.go
+coverage.out
+coverage.html
+
+# Build artifacts
+schwab-proxy
+dist/
+build/
+
+# Data directories
+data/
+*.db
+schwab_data/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker files
+.dockerignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Token files
+*.json
+tokens/
+
+# Cache
+.cache/
