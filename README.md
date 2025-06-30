@@ -52,16 +52,19 @@ docker exec $(docker ps -q -f ancestor=ghcr.io/jkoelker/schwab-proxy:latest) cat
 
 ## Using schwab-py
 
-The proxy works seamlessly with schwab-py by monkey-patching the base URLs:
+The proxy works seamlessly with schwab-py using the provided patcher:
 
 ```python
+# Import and apply the patcher before importing schwab modules
+import schwab_monkeypatch
+
+schwab_monkeypatch.patch_schwab_client(
+    "https://localhost:8080",  # Your proxy URL
+    verify_ssl=False          # Set to False for self-signed certificates
+)
+
+# Now import and use schwab-py normally
 import schwab
-
-# Monkey patch schwab-py to use your proxy
-schwab.client.base.SCHWAB_BASE_URL = 'https://localhost:8080'
-schwab.auth.SCHWAB_AUTH_BASE_URL = 'https://localhost:8080/v1/oauth'
-
-# Then use schwab-py normally
 from schwab.auth import client_from_manual_flow
 
 client = client_from_manual_flow(
@@ -75,6 +78,8 @@ client = client_from_manual_flow(
 response = client.get_account_numbers()
 accounts = response.json()
 ```
+
+See `python/test_client.py` for a complete example including command-line usage.
 
 ## Client Management
 
