@@ -32,3 +32,11 @@ jobs:
         uses: actions/checkout@v4
       - name: Check go mod tidy
         run: make tidy-ci
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Build binary
+        run: make docker-build
