@@ -11,6 +11,11 @@ name: Auto Labeler
       - edited
       - synchronize
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   main:
     name: Auto label pull requests
