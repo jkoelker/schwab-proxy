@@ -21,7 +21,7 @@ podman run -d \
   -e JWT_SEED="your-saved-jwt-seed" \
   -e SCHWAB_CLIENT_ID="your-schwab-client-id" \
   -e SCHWAB_CLIENT_SECRET="your-schwab-client-secret" \
-  -e SCHWAB_REDIRECT_URI="https://localhost:8080/auth/callback" \
+  -e SCHWAB_REDIRECT_URI="https://127.0.0.1:8080/setup/callback" \
   ghcr.io/jkoelker/schwab-proxy:latest
 
 # Or with Docker
@@ -32,14 +32,14 @@ docker run -d \
   -e JWT_SEED="your-saved-jwt-seed" \
   -e SCHWAB_CLIENT_ID="your-schwab-client-id" \
   -e SCHWAB_CLIENT_SECRET="your-schwab-client-secret" \
-  -e SCHWAB_REDIRECT_URI="https://localhost:8080/auth/callback" \
+  -e SCHWAB_REDIRECT_URI="https://127.0.0.1:8080/setup/callback" \
   ghcr.io/jkoelker/schwab-proxy:latest
 ```
 
 **Important**: Save your seeds securely! The same seeds must be used on every
 restart or your encrypted data will be inaccessible.
 
-Visit `https://localhost:8080/setup` to authenticate with Schwab.
+Visit `https://127.0.0.1:8080/setup` to authenticate with Schwab.
 
 To get the admin API key (if not specified):
 ```bash
@@ -59,7 +59,7 @@ The proxy works seamlessly with schwab-py using the provided patcher:
 import schwab_monkeypatch
 
 schwab_monkeypatch.patch_schwab_client(
-    "https://localhost:8080",  # Your proxy URL
+    "https://127.0.0.1:8080",  # Your proxy URL
     verify_ssl=False          # Set to False for self-signed certificates
 )
 
@@ -90,7 +90,7 @@ See `python/test_client.py` for a complete example including command-line usage.
 export ADMIN_API_KEY="your-admin-key"
 
 # Create a new client
-curl -k -X POST https://localhost:8080/api/clients \
+curl -k -X POST https://127.0.0.1:8080/api/clients \
   -H "Authorization: Bearer $ADMIN_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -110,14 +110,14 @@ curl -k -X POST https://localhost:8080/api/clients \
 ### List Clients
 
 ```bash
-curl -k -X GET https://localhost:8080/api/clients \
+curl -k -X GET https://127.0.0.1:8080/api/clients \
   -H "Authorization: Bearer $ADMIN_API_KEY"
 ```
 
 ### Delete a Client
 
 ```bash
-curl -k -X DELETE https://localhost:8080/api/clients/client_abc123 \
+curl -k -X DELETE https://127.0.0.1:8080/api/clients/client_abc123 \
   -H "Authorization: Bearer $ADMIN_API_KEY"
 ```
 
@@ -129,16 +129,16 @@ Once authenticated, you can make direct API calls through the proxy:
 
 ```bash
 # Get account numbers
-curl -k https://localhost:8080/trader/v1/accounts/accountNumbers
+curl -k https://127.0.0.1:8080/trader/v1/accounts/accountNumbers
 
 # Get quotes
-curl -k "https://localhost:8080/marketdata/v1/quotes?symbols=AAPL,MSFT"
+curl -k "https://127.0.0.1:8080/marketdata/v1/quotes?symbols=AAPL,MSFT"
 
 # Get option chain
-curl -k "https://localhost:8080/marketdata/v1/chains?symbol=AAPL"
+curl -k "https://127.0.0.1:8080/marketdata/v1/chains?symbol=AAPL"
 
-# Check proxy status
-curl -k https://localhost:8080/status
+# Check proxy health
+curl -k https://127.0.0.1:8080/health/ready
 ```
 
 Note: The `-k` flag bypasses certificate warnings for local development.
@@ -151,15 +151,15 @@ approval:
 
 ```bash
 # View pending approvals
-curl -k https://localhost:8080/api/approvals \
+curl -k https://127.0.0.1:8080/api/approvals \
   -H "Authorization: Bearer $ADMIN_API_KEY"
 
 # Approve authorization
-curl -k -X POST https://localhost:8080/api/approvals/APPROVAL_ID \
+curl -k -X POST https://127.0.0.1:8080/api/approvals/APPROVAL_ID \
   -H "Authorization: Bearer $ADMIN_API_KEY"
 
 # Deny authorization
-curl -k -X DELETE https://localhost:8080/api/approvals/APPROVAL_ID \
+curl -k -X DELETE https://127.0.0.1:8080/api/approvals/APPROVAL_ID \
   -H "Authorization: Bearer $ADMIN_API_KEY"
 ```
 
@@ -173,7 +173,7 @@ curl -k -X DELETE https://localhost:8080/api/approvals/APPROVAL_ID \
 - `SCHWAB_CLIENT_ID` - From Schwab developer portal
 - `SCHWAB_CLIENT_SECRET` - From Schwab developer portal
 - `SCHWAB_REDIRECT_URI` - Must match Schwab app config (e.g.
-    `https://localhost:8080/auth/callback`)
+    `https://127.0.0.1:8080/setup/callback`)
 
 ### Optional Variables
 
