@@ -66,6 +66,7 @@ func NewClient(id, secret string, redirectURIs []string, scopes []string) *Clien
 // ClientWithSecret holds a client and its plaintext secret for API responses.
 type ClientWithSecret struct {
 	*Client
+
 	PlaintextSecret string `json:"secret"`
 }
 

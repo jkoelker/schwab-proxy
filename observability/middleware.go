@@ -119,6 +119,7 @@ func TracingMiddleware(next http.Handler) http.Handler {
 // responseWriter wraps http.ResponseWriter to capture response metrics.
 type responseWriter struct {
 	http.ResponseWriter
+
 	statusCode   int
 	bytesWritten int64
 }
