@@ -580,6 +580,7 @@ func TestStoreConcurrentAccess(t *testing.T) {
 
 			for range 10 {
 				var value int
+
 				_ = store.Get(ctx, "concurrent:test", &value)
 			}
 		}()

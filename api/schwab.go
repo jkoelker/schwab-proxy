@@ -191,6 +191,7 @@ func (c *SchwabClient) ExchangeCode(ctx context.Context, code string) error {
 // RefreshToken refreshes the current token.
 func (c *SchwabClient) RefreshToken(ctx context.Context) error {
 	c.tokenMutex.RLock()
+
 	if c.currentToken == nil {
 		c.tokenMutex.RUnlock()
 
@@ -245,6 +246,7 @@ func (c *SchwabClient) Call(
 ) (*http.Response, error) {
 	// Get current token (middleware ensures it's valid)
 	c.tokenMutex.RLock()
+
 	if c.currentToken == nil {
 		c.tokenMutex.RUnlock()
 

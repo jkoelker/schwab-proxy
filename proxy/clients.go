@@ -38,6 +38,7 @@ type ClientResponse struct {
 
 type ClientWithSecretResponse struct {
 	ClientResponse
+
 	Secret string `json:"secret"`
 }
 
