@@ -40,7 +40,7 @@ RUN go build \
 # Runtime stage - distroless for maximum security
 FROM gcr.io/distroless/static-debian12:nonroot
 
-LABEL org.opencontainers.image.source https://github.com/jkoelker/schwab-proxy
+LABEL org.opencontainers.image.source=https://github.com/jkoelker/schwab-proxy
 
 # Copy the static binary
 COPY --from=builder /build/schwab-proxy /usr/local/bin/schwab-proxy
