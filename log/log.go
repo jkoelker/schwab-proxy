@@ -16,6 +16,14 @@ const (
 	loggerKey contextKey = "logger"
 )
 
+// Alias slog levels for convenience.
+const (
+	LevelDebug = slog.LevelDebug
+	LevelInfo  = slog.LevelInfo
+	LevelWarn  = slog.LevelWarn
+	LevelError = slog.LevelError
+)
+
 var (
 	// defaultLogger is the fallback logger when none is found in context.
 	defaultLogger *slog.Logger //nolint:gochecknoglobals // Thread-safe: protected by sync.Once
@@ -116,6 +124,11 @@ func Debug(ctx context.Context, msg string, keysAndValues ...any) {
 // Warn logs a warning message with key-value pairs.
 func Warn(ctx context.Context, msg string, keysAndValues ...any) {
 	fromContext(ctx).WarnContext(ctx, msg, keysAndValues...)
+}
+
+// Log logs a message at the specified level with key-value pairs.
+func Log(ctx context.Context, level slog.Level, msg string, keysAndValues ...any) {
+	fromContext(ctx).Log(ctx, level, msg, keysAndValues...)
 }
 
 // IsSensitiveKey checks if a log key contains sensitive information.
