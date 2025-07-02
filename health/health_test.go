@@ -166,54 +166,6 @@ func TestHTTPHandler_Readiness(t *testing.T) {
 	}
 }
 
-func TestHTTPHandler_ReadinessStrictMode(t *testing.T) {
-	t.Parallel()
-	// Test strict mode (default) - degraded should return 503
-	config := health.DefaultConfig()
-	config.StrictReadiness = true
-	config.Version = testVersion
-
-	checker := health.NewManagerWithConfig(config)
-	handler := health.NewHTTPHandler(checker)
-
-	// Add a degraded checker
-	degradedChecker := &DegradedChecker{}
-	checker.AddChecker(degradedChecker)
-
-	req := httptest.NewRequest(http.MethodGet, "/health/ready", nil)
-	recorder := httptest.NewRecorder()
-
-	handler.ReadinessHandler(recorder, req)
-
-	if recorder.Code != http.StatusServiceUnavailable {
-		t.Errorf("Expected status 503 in strict mode for degraded, got %d", recorder.Code)
-	}
-}
-
-func TestHTTPHandler_ReadinessPermissiveMode(t *testing.T) {
-	t.Parallel()
-	// Test permissive mode - degraded should return 200
-	config := health.DefaultConfig()
-	config.StrictReadiness = false
-	config.Version = testVersion
-
-	checker := health.NewManagerWithConfig(config)
-	handler := health.NewHTTPHandler(checker)
-
-	// Add a degraded checker
-	degradedChecker := &DegradedChecker{}
-	checker.AddChecker(degradedChecker)
-
-	req := httptest.NewRequest(http.MethodGet, "/health/ready", nil)
-	recorder := httptest.NewRecorder()
-
-	handler.ReadinessHandler(recorder, req)
-
-	if recorder.Code != http.StatusOK {
-		t.Errorf("Expected status 200 in permissive mode for degraded, got %d", recorder.Code)
-	}
-}
-
 // DegradedChecker always returns degraded status for testing.
 type DegradedChecker struct{}
 

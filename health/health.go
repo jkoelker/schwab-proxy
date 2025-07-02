@@ -226,6 +226,10 @@ func (pc *ProviderChecker) Name() string {
 }
 
 // Check performs the provider API health check.
+// Always returns healthy for token-related issues since the proxy can handle:
+// - Initial setup flow when no token exists
+// - Automatic token refresh when token is expired
+// Only returns unhealthy for actual client errors (not implemented).
 func (pc *ProviderChecker) Check(_ context.Context) Check {
 	check := Check{
 		Name:        providerAPICheckerName,
@@ -236,23 +240,26 @@ func (pc *ProviderChecker) Check(_ context.Context) Check {
 	// Check if we have a valid token
 	token, err := pc.client.GetToken()
 	if err != nil {
-		check.Status = StatusDegraded
-		check.Message = "No provider token available - setup required"
-		check.Metadata["setup_required"] = "true"
+		// No token available - but service can still handle requests (setup flow)
+		check.Status = StatusHealthy
+		check.Message = "No provider token available - will authenticate on demand"
+		check.Metadata["token_available"] = "false"
+		check.Metadata["setup_url"] = "/setup"
 
 		return check
 	}
 
 	if !token.Valid() {
-		check.Status = StatusDegraded
-		check.Message = "Provider token expired - will refresh on next request"
+		// Token expired - but service can refresh it automatically
+		check.Status = StatusHealthy
+		check.Message = "Provider token expired - will refresh on demand"
 		check.Metadata["token_expired"] = "true"
+		check.Metadata["expires_at"] = token.Expiry.Format(time.RFC3339)
 
 		return check
 	}
 
-	// For now, just check token validity
-	// In a full implementation, we might make a lightweight API call
+	// Token is valid
 	check.Status = StatusHealthy
 	check.Message = "Provider token is valid"
 	check.Metadata["token_expires_at"] = token.Expiry.Format(time.RFC3339)
@@ -302,22 +309,16 @@ func (h *HTTPHandler) ReadinessHandler(writer http.ResponseWriter, request *http
 
 	// Return appropriate HTTP status based on health
 	// For Kubernetes: Only return 200 if completely healthy
-	// This ensures degraded pods are removed from load balancer rotation
+	// This ensures degraded or unhealthy pods are removed from load balancer rotation
 	var statusCode int
 
 	switch response.Status {
 	case StatusHealthy:
 		statusCode = http.StatusOK
 	case StatusDegraded:
-		// Check configuration for how to handle degraded status
-		if h.checker.config.StrictReadiness {
-			// Return 503 for degraded to remove from K8s service endpoints
-			// This is more conservative but safer for production
-			statusCode = http.StatusServiceUnavailable
-		} else {
-			// Allow degraded pods to continue receiving traffic
-			statusCode = http.StatusOK
-		}
+		// Degraded means the service cannot properly serve requests
+		// (e.g., storage issues) so it should not receive traffic
+		statusCode = http.StatusServiceUnavailable
 	case StatusUnhealthy:
 		statusCode = http.StatusServiceUnavailable
 	default:
