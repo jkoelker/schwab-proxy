@@ -212,6 +212,13 @@ make devkit
 - Data is encrypted with AES-256 using keys derived from your seeds
 - Supports automatic TLS certificate reloading for Kubernetes deployments
 
+### Health Checks
+
+The proxy provides Kubernetes-compatible health endpoints:
+
+- `/health/live` - Liveness probe
+- `/health/ready` - Readiness probe
+
 ## License
 
 MIT
