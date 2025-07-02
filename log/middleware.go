@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"net/http"
+	"strings"
 )
 
 const (
@@ -49,8 +50,14 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		ctx := request.Context()
 
+		// Determine log level based on path
+		level := LevelInfo
+		if strings.HasPrefix(request.URL.Path, "/health/") {
+			level = LevelDebug
+		}
+
 		// Log the incoming request
-		Info(ctx, "HTTP request started",
+		Log(ctx, level, "HTTP request started",
 			"method", request.Method,
 			"path", request.URL.Path,
 			"remote_addr", request.RemoteAddr,
@@ -64,7 +71,7 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(wrapped, request)
 
 		// Log the response
-		Info(ctx, "HTTP request completed",
+		Log(ctx, level, "HTTP request completed",
 			"method", request.Method,
 			"path", request.URL.Path,
 			"status_code", wrapped.statusCode,
