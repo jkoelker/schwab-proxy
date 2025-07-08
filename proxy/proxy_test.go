@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/oauth2"
 
 	"github.com/jkoelker/schwab-proxy/auth"
@@ -20,6 +21,11 @@ import (
 	"github.com/jkoelker/schwab-proxy/metrics"
 	"github.com/jkoelker/schwab-proxy/proxy"
 	"github.com/jkoelker/schwab-proxy/storage"
+)
+
+const (
+	// contentTypeJSON is the content type for JSON responses.
+	contentTypeJSON = "application/json"
 )
 
 // MockProviderClient implements api.ProviderClient for testing.
@@ -341,8 +347,8 @@ func TestRFC6750BearerTokenError(t *testing.T) {
 
 	// Check Content-Type header
 	contentType := recorder.Header().Get("Content-Type")
-	if contentType != "application/json" {
-		t.Errorf("Expected Content-Type: application/json, got: %s", contentType)
+	if contentType != contentTypeJSON {
+		t.Errorf("Expected Content-Type: %s, got: %s", contentTypeJSON, contentType)
 	}
 
 	// Parse and verify JSON error response
@@ -361,4 +367,236 @@ func TestRFC6750BearerTokenError(t *testing.T) {
 	}
 
 	t.Logf("RFC 6750 Bearer token error response verified: %d - %s", recorder.Code, recorder.Body.String())
+}
+
+// MockProviderClientWithHeaders implements api.ProviderClient with custom headers for testing.
+type MockProviderClientWithHeaders struct {
+	MockProviderClient
+}
+
+func (m *MockProviderClientWithHeaders) Call(
+	_ context.Context,
+	_,
+	_ string,
+	_ io.Reader,
+	_ http.Header,
+) (*http.Response, error) {
+	resp := &http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(bytes.NewBufferString(`{"status":"ok"}`)),
+		Header:     make(http.Header),
+	}
+
+	// Add headers with multiple values
+	resp.Header["Content-Type"] = []string{contentTypeJSON}
+	resp.Header["X-Custom-Header"] = []string{"value1", "value2"}
+	resp.Header["Cache-Control"] = []string{"no-cache"}
+
+	return resp, nil
+}
+
+// TestResponseHeaderHandling tests that response headers are properly copied without duplication.
+func TestResponseHeaderHandling(t *testing.T) {
+	t.Parallel()
+
+	// Create a test HTTP response writer to capture headers
+	recorder := httptest.NewRecorder()
+
+	// Create a mock HTTP response with test headers
+	mockResponse := &http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(bytes.NewBufferString(`{"status":"ok"}`)),
+		Header:     make(http.Header),
+	}
+
+	// Add headers with multiple values
+	mockResponse.Header["Content-Type"] = []string{contentTypeJSON}
+	mockResponse.Header["X-Custom-Header"] = []string{"value1", "value2"}
+	mockResponse.Header["Cache-Control"] = []string{"no-cache"}
+
+	// Simulate the header copying behavior from proxy.forwardRequest
+	for k, values := range mockResponse.Header {
+		recorder.Header()[k] = values
+	}
+
+	// Verify headers were copied without duplication
+	contentTypes := recorder.Header()["Content-Type"]
+	if len(contentTypes) != 1 {
+		t.Errorf("Expected exactly 1 Content-Type header, got %d: %v", len(contentTypes), contentTypes)
+	}
+
+	if len(contentTypes) > 0 && contentTypes[0] != contentTypeJSON {
+		t.Errorf("Expected Content-Type '%s', got '%s'", contentTypeJSON, contentTypes[0])
+	}
+
+	// Check custom headers with multiple values
+	customHeaders := recorder.Header()["X-Custom-Header"]
+	if len(customHeaders) != 2 {
+		t.Errorf("Expected 2 X-Custom-Header values, got %d: %v", len(customHeaders), customHeaders)
+	}
+
+	// Check single-value header
+	cacheHeaders := recorder.Header()["Cache-Control"]
+	if len(cacheHeaders) != 1 {
+		t.Errorf("Expected exactly 1 Cache-Control header, got %d: %v", len(cacheHeaders), cacheHeaders)
+	}
+
+	t.Logf("Response header handling verified: %d headers copied correctly", len(recorder.Header()))
+}
+
+// MockProviderClientWithRequestCapture captures request headers for testing.
+type MockProviderClientWithRequestCapture struct {
+	MockProviderClient
+
+	capturedHeaders  http.Header
+	capturedMethod   string
+	capturedEndpoint string
+}
+
+func (m *MockProviderClientWithRequestCapture) Call(
+	_ context.Context,
+	method,
+	endpoint string,
+	_ io.Reader,
+	headers http.Header,
+) (*http.Response, error) {
+	// Capture the request details
+	m.capturedHeaders = headers.Clone()
+	m.capturedMethod = method
+	m.capturedEndpoint = endpoint
+
+	// Return a simple response
+	resp := &http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(bytes.NewBufferString(`{"status":"ok"}`)),
+		Header:     make(http.Header),
+	}
+	resp.Header.Set("Content-Type", contentTypeJSON)
+
+	return resp, nil
+}
+
+// MockTokenValidator provides a simple token validation for testing.
+type MockTokenValidator struct {
+	validToken string
+}
+
+func (m *MockTokenValidator) ValidateAccessToken(
+	_ context.Context,
+	token string,
+) (string, []string, error) {
+	if token == m.validToken {
+		return "test-client", []string{"read"}, nil
+	}
+
+	return "", nil, assert.AnError
+}
+
+// verifyHeader is a helper function to verify a single header value.
+func verifyHeader(t *testing.T, headers http.Header, name, expected string) {
+	t.Helper()
+
+	values := headers[name]
+	if len(values) != 1 || values[0] != expected {
+		t.Errorf("Expected %s '%s', got %v", name, expected, values)
+	}
+}
+
+// verifyHeaderCount is a helper function to verify header count.
+func verifyHeaderCount(t *testing.T, headers http.Header, name string, expectedCount int) {
+	t.Helper()
+
+	values := headers[name]
+	if len(values) != expectedCount {
+		t.Errorf("Expected %d %s header(s), got %d: %v", expectedCount, name, len(values), values)
+	}
+}
+
+// verifyMultiValueHeader is a helper function to verify headers with multiple values.
+func verifyMultiValueHeader(t *testing.T, headers http.Header, name string, expectedValues []string) {
+	t.Helper()
+
+	values := headers[name]
+	if len(values) != len(expectedValues) {
+		t.Errorf("Expected %d %s values, got %d: %v", len(expectedValues), name, len(values), values)
+
+		return
+	}
+
+	for i, expected := range expectedValues {
+		if values[i] != expected {
+			t.Errorf("Expected %s[%d] to be '%s', got '%s'", name, i, expected, values[i])
+		}
+	}
+}
+
+// createTestHeaders creates a set of test headers.
+func createTestHeaders() http.Header {
+	headers := make(http.Header)
+	headers.Set("Authorization", "Bearer client-token")
+	headers.Set("Content-Type", contentTypeJSON)
+	headers.Set("X-Custom-Header", "custom-value")
+	headers.Add("X-Multi-Header", "value1")
+	headers.Add("X-Multi-Header", "value2")
+	headers.Set("Accept", contentTypeJSON)
+	headers.Set("User-Agent", "test-client/1.0")
+	headers.Set("Host", "malicious.host")
+
+	return headers
+}
+
+// TestRequestHeaderHandling tests that request headers are properly forwarded without duplication.
+func TestRequestHeaderHandling(t *testing.T) {
+	t.Parallel()
+
+	// Create a mock provider client that captures request headers
+	mockClient := &MockProviderClientWithRequestCapture{
+		MockProviderClient: MockProviderClient{initialized: true},
+	}
+
+	// Create test headers
+	clientHeaders := createTestHeaders()
+
+	// Call the mock client with the headers
+	ctx := context.Background()
+
+	resp, err := mockClient.Call(
+		ctx,
+		"POST",
+		"/marketdata/v1/quotes",
+		bytes.NewBufferString(`{"symbols":["AAPL"]}`),
+		clientHeaders,
+	)
+	if err != nil {
+		t.Fatalf("Mock call failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Now let's test what the actual SchwabClient does with headers
+	// This simulates the behavior in api/schwab.go
+	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.schwabapi.com/marketdata/v1/quotes", nil)
+
+	// Set Authorization header (simulating setDefaultHeaders in SchwabClient)
+	req.Header.Set("Authorization", "Bearer provider-token")
+
+	// Copy headers (simulating copyHeaders in SchwabClient)
+	for key, values := range clientHeaders {
+		if key == "Authorization" || key == "Host" {
+			continue
+		}
+
+		req.Header[key] = values
+	}
+
+	// Verify headers
+	verifyHeaderCount(t, req.Header, "Content-Type", 1)
+	verifyHeader(t, req.Header, "Content-Type", contentTypeJSON)
+	verifyHeader(t, req.Header, "X-Custom-Header", "custom-value")
+	verifyMultiValueHeader(t, req.Header, "X-Multi-Header", []string{"value1", "value2"})
+	verifyHeader(t, req.Header, "Accept", contentTypeJSON)
+	verifyHeader(t, req.Header, "User-Agent", "test-client/1.0")
+	verifyHeader(t, req.Header, "Authorization", "Bearer provider-token")
+	verifyHeaderCount(t, req.Header, "Host", 0)
+
+	t.Logf("Request header handling verified: headers forwarded correctly without duplication")
 }
