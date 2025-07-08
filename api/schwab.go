@@ -263,7 +263,7 @@ func (c *SchwabClient) Call(
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	c.setDefaultHeaders(req, accessToken, method)
+	req.Header.Set("Authorization", "Bearer "+accessToken)
 	c.copyHeaders(req, headers)
 
 	resp, err := c.httpClient.Do(req)
@@ -301,20 +301,6 @@ func (c *SchwabClient) buildRequestURL(endpoint string) string {
 	return requestURL + endpoint
 }
 
-// setDefaultHeaders sets required headers for Schwab API requests.
-func (c *SchwabClient) setDefaultHeaders(req *http.Request, accessToken, method string) {
-	// Add authorization header - always use "Bearer" for Schwab API
-	req.Header.Set("Authorization", "Bearer "+accessToken)
-
-	// Add required headers
-	req.Header.Set("Accept", "application/json")
-
-	// Add content type if not present
-	if req.Header.Get("Content-Type") == "" && method != "GET" && method != "DELETE" {
-		req.Header.Set("Content-Type", "application/json")
-	}
-}
-
 // copyHeaders copies headers from original request, skipping certain headers.
 func (c *SchwabClient) copyHeaders(req *http.Request, headers http.Header) {
 	for key, values := range headers {
@@ -323,8 +309,6 @@ func (c *SchwabClient) copyHeaders(req *http.Request, headers http.Header) {
 			continue
 		}
 
-		for _, value := range values {
-			req.Header.Add(key, value)
-		}
+		req.Header[key] = values
 	}
 }

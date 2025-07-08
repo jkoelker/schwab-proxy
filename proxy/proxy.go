@@ -480,9 +480,7 @@ func (p *APIProxy) forwardRequest(writer http.ResponseWriter, request *http.Requ
 
 	// Copy response headers
 	for k, values := range resp.Header {
-		for _, v := range values {
-			writer.Header().Add(k, v)
-		}
+		writer.Header()[k] = values
 	}
 
 	// Set the status code

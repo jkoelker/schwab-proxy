@@ -67,7 +67,6 @@ def _patch_sync_client(sync_module, proxy_base_url: str):
         dest = proxy_base_url + path
         headers = {
             "Authorization": "Bearer " + str(self.token_metadata.token["access_token"]),
-            "Content-Type": "application/json",
         }
         # Use the session's internal httpx client which has our SSL settings
         return self.session.session.post(dest, json=data, headers=headers)
@@ -76,7 +75,6 @@ def _patch_sync_client(sync_module, proxy_base_url: str):
         dest = proxy_base_url + path
         headers = {
             "Authorization": "Bearer " + str(self.token_metadata.token["access_token"]),
-            "Content-Type": "application/json",
         }
         # Use the session's internal httpx client which has our SSL settings
         return self.session.session.put(dest, json=data, headers=headers)
@@ -112,7 +110,6 @@ def _patch_async_client(async_module, proxy_base_url: str):
         dest = proxy_base_url + path
         headers = {
             "Authorization": "Bearer " + str(self.token_metadata.token["access_token"]),
-            "Content-Type": "application/json",
         }
         # Use the session's internal httpx client which has our SSL settings
         return await self.session.session.post(dest, json=data, headers=headers)
@@ -121,7 +118,6 @@ def _patch_async_client(async_module, proxy_base_url: str):
         dest = proxy_base_url + path
         headers = {
             "Authorization": "Bearer " + str(self.token_metadata.token["access_token"]),
-            "Content-Type": "application/json",
         }
         # Use the session's internal httpx client which has our SSL settings
         return await self.session.session.put(dest, json=data, headers=headers)
