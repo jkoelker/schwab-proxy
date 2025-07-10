@@ -204,11 +204,17 @@ func createServer(
 
 	// Wrap the API proxy with middleware stack
 	// Order: CorrelationID -> Logging -> Metrics -> Tracing -> APIProxy
+	loggingOpts := []func(*log.LoggingOptions){}
+	if !cfg.DebugHealthChecks {
+		loggingOpts = append(loggingOpts, log.WithDebugHealthChecks(false))
+	}
+
 	handler := log.CorrelationIDMiddleware(
 		log.LoggingMiddleware(
 			observability.MetricsMiddleware(
 				observability.TracingMiddleware(apiProxy),
 			),
+			loggingOpts...,
 		),
 	)
 

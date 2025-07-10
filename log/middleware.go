@@ -45,14 +45,44 @@ func CorrelationIDMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+// LoggingOptions holds configuration for the logging middleware.
+type LoggingOptions struct {
+	DebugHealthChecks bool
+}
+
+// WithDebugHealthChecks enables or disables debug logging for health check endpoints.
+func WithDebugHealthChecks(enabled bool) func(*LoggingOptions) {
+	return func(opts *LoggingOptions) {
+		opts.DebugHealthChecks = enabled
+	}
+}
+
 // LoggingMiddleware logs HTTP requests with structured logging.
-func LoggingMiddleware(next http.Handler) http.Handler {
+func LoggingMiddleware(next http.Handler, opts ...func(*LoggingOptions)) http.Handler {
+	// Apply default options
+	options := &LoggingOptions{
+		DebugHealthChecks: true, // Default to true for backwards compatibility
+	}
+
+	// Apply provided options
+	for _, opt := range opts {
+		opt(options)
+	}
+
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		ctx := request.Context()
 
+		// Skip logging for health checks if debug is disabled
+		isHealthCheck := strings.HasPrefix(request.URL.Path, "/health/")
+		if isHealthCheck && !options.DebugHealthChecks {
+			next.ServeHTTP(writer, request)
+
+			return
+		}
+
 		// Determine log level based on path
 		level := LevelInfo
-		if strings.HasPrefix(request.URL.Path, "/health/") {
+		if isHealthCheck {
 			level = LevelDebug
 		}
 

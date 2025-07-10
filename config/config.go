@@ -61,6 +61,7 @@ type Config struct {
 	// Debug options
 	DebugLogging               bool `env:"DEBUG_LOGGING"                  envDefault:"false"`
 	SendDebugMessagesToClients bool `env:"SEND_DEBUG_MESSAGES_TO_CLIENTS" envDefault:"false"`
+	DebugHealthChecks          bool `env:"DEBUG_HEALTH_CHECKS"            envDefault:"false"`
 
 	// Admin API settings (generated, not from env)
 	AdminAPIKey string `env:"-"`
