@@ -89,13 +89,14 @@ func createTestProxy(t *testing.T) (*proxy.APIProxy, func()) {
 
 	// Create test config
 	cfg := &config.Config{
-		ListenAddr:  "127.0.0.1",
-		Port:        8080,
-		DataPath:    tempDir,
-		AdminAPIKey: "test-admin-key",
-		StorageSeed: "test-storage-seed-32-bytes-xxxxx",
-		JWTSeed:     "test-jwt-seed-32-bytes-xxxxxxxxx",
-		KDFSpec:     "pbkdf2:default", // Use PBKDF2 for faster tests
+		ListenAddr:           "127.0.0.1",
+		Port:                 8080,
+		DataPath:             tempDir,
+		AdminAPIKey:          "test-admin-key",
+		StorageSeed:          "test-storage-seed-32-bytes-xxxxx",
+		JWTSeed:              "test-jwt-seed-32-bytes-xxxxxxxxx",
+		KDFSpec:              "pbkdf2:default", // Use PBKDF2 for faster tests
+		TokenRefreshInterval: 10 * time.Minute,
 	}
 
 	ctx := t.Context()
