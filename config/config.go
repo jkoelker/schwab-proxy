@@ -56,6 +56,7 @@ type Config struct {
 	OAuth2AccessTokenExpiry  time.Duration `env:"OAUTH2_ACCESS_TOKEN_EXPIRY"  envDefault:"12h"`
 	OAuth2RefreshTokenExpiry time.Duration `env:"OAUTH2_REFRESH_TOKEN_EXPIRY" envDefault:"168h"`
 	OAuth2AuthCodeExpiry     time.Duration `env:"OAUTH2_AUTH_CODE_EXPIRY"     envDefault:"10m"`
+	TokenRefreshInterval     time.Duration `env:"TOKEN_REFRESH_INTERVAL"      envDefault:"10m"`
 
 	// Debug options
 	DebugLogging               bool `env:"DEBUG_LOGGING"                  envDefault:"false"`

@@ -26,9 +26,6 @@ type contextKey string
 const tokenClaimsKey contextKey = "token_claims"
 
 const (
-	// tokenRefreshInterval is how often to check for tokens that need refresh.
-	tokenRefreshInterval = 6 * time.Hour
-
 	invalidTokenHeader      = "WWW-Authenticate"
 	invalidTokenHeaderValue = `Bearer error="invalid_token", ` +
 		`error_description="The access token provided is expired, revoked, malformed, or invalid"`
@@ -195,9 +192,9 @@ func (p *APIProxy) startBackgroundTokenRefresh() {
 	p.refreshCancel = cancel
 
 	go func() {
-		log.Info(ctx, "Starting background token refresh ticker", "check_interval", tokenRefreshInterval.String())
+		log.Info(ctx, "Starting background token refresh ticker", "check_interval", p.cfg.TokenRefreshInterval.String())
 
-		ticker := time.NewTicker(tokenRefreshInterval)
+		ticker := time.NewTicker(p.cfg.TokenRefreshInterval)
 		defer ticker.Stop()
 
 		for {
@@ -209,7 +206,7 @@ func (p *APIProxy) startBackgroundTokenRefresh() {
 			case <-ticker.C:
 				log.Info(
 					ctx, "Background token refresh check triggered",
-					"next_check_in", tokenRefreshInterval.String(),
+					"next_check_in", p.cfg.TokenRefreshInterval.String(),
 				)
 
 				if p.tokenService.NeedsProactiveRefresh(ctx) {

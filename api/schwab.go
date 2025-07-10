@@ -17,6 +17,7 @@ import (
 
 	"github.com/jkoelker/schwab-proxy/auth"
 	"github.com/jkoelker/schwab-proxy/config"
+	"github.com/jkoelker/schwab-proxy/log"
 )
 
 const (
@@ -202,13 +203,28 @@ func (c *SchwabClient) RefreshToken(ctx context.Context) error {
 	oldToken := *c.currentToken
 	c.tokenMutex.RUnlock()
 
+	// Log refresh token status before refresh
+	log.Debug(ctx, "Starting token refresh",
+		"has_refresh_token", oldToken.RefreshToken != "",
+		"token_expires_at", oldToken.Expiry.Format(time.RFC3339))
+
 	// Use oauth2 TokenSource to refresh
 	tokenSource := c.oauth2Config.TokenSource(ctx, &oldToken)
 
 	newToken, err := tokenSource.Token()
 	if err != nil {
+		// Check for specific refresh token errors
+		if strings.Contains(err.Error(), "refresh_token_authentication_error") {
+			log.Error(ctx, err, "Refresh token rejected by Schwab - re-authentication required via /setup")
+		}
+
 		return fmt.Errorf("token refresh failed: %w", err)
 	}
+
+	// Log what we got back
+	log.Debug(ctx, "Token refresh response received",
+		"new_refresh_token_provided", newToken.RefreshToken != "",
+		"refresh_token_changed", newToken.RefreshToken != oldToken.RefreshToken)
 
 	// Calculate expires_in from the expiry time
 	expiresIn := 0
