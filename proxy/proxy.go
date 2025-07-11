@@ -101,13 +101,19 @@ func NewAPIProxy(
 		return nil, fmt.Errorf("failed to create OAuth2 server: %w", err)
 	}
 
+	// Configure health handler options
+	healthOpts := []func(*health.HTTPHandlerOptions){}
+	if !cfg.DebugHealthChecks {
+		healthOpts = append(healthOpts, health.WithDebugHealthChecks(false))
+	}
+
 	proxy := &APIProxy{
 		mux:           http.NewServeMux(),
 		cfg:           cfg,
 		schwabClient:  schwabClient,
 		tokenService:  tokenService,
 		clientService: clientService,
-		healthHandler: health.NewHTTPHandler(healthChecker),
+		healthHandler: health.NewHTTPHandler(healthChecker, healthOpts...),
 		otelProviders: otelProviders,
 		server:        server,
 		storage:       store,
