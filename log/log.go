@@ -135,12 +135,16 @@ func Log(ctx context.Context, level slog.Level, msg string, keysAndValues ...any
 func IsSensitiveKey(key string) bool {
 	// Whitelist certain keys that contain sensitive words but are safe to log
 	safeKeys := []string{
-		"total_keys",    // Count of keys, not actual keys
-		"expired_keys",  // Count of expired keys
-		"key_prefixes",  // Key type statistics
-		"migrated_keys", // Migration statistics
-		"error_keys",    // Error count
-		"keys",          // Generic key count (used in migration logs)
+		"total_keys",                 // Count of keys, not actual keys
+		"expired_keys",               // Count of expired keys
+		"key_prefixes",               // Key type statistics
+		"migrated_keys",              // Migration statistics
+		"error_keys",                 // Error count
+		"keys",                       // Generic key count (used in migration logs)
+		"has_refresh_token",          // Indicates presence of a refresh token
+		"token_expires_at",           // Timestamp for token expiration
+		"new_refresh_token_provided", // Indicates a new refresh token was provided
+		"refresh_token_changed",      // Indicates a refresh token change
 	}
 
 	keyLower := strings.ToLower(key)
