@@ -269,19 +269,47 @@ func (pc *ProviderChecker) Check(_ context.Context) Check {
 
 // HTTPHandler creates HTTP handlers for health endpoints.
 type HTTPHandler struct {
-	checker *Manager
+	checker           *Manager
+	debugHealthChecks bool
+}
+
+// HTTPHandlerOptions holds configuration for the HTTP handler.
+type HTTPHandlerOptions struct {
+	DebugHealthChecks bool
+}
+
+// WithDebugHealthChecks enables or disables debug logging for health check endpoints.
+func WithDebugHealthChecks(enabled bool) func(*HTTPHandlerOptions) {
+	return func(opts *HTTPHandlerOptions) {
+		opts.DebugHealthChecks = enabled
+	}
 }
 
 // NewHTTPHandler creates a new HTTP handler for health checks.
-func NewHTTPHandler(checker *Manager) *HTTPHandler {
-	return &HTTPHandler{checker: checker}
+func NewHTTPHandler(checker *Manager, opts ...func(*HTTPHandlerOptions)) *HTTPHandler {
+	// Apply default options
+	options := &HTTPHandlerOptions{
+		DebugHealthChecks: true, // Default to true for backwards compatibility
+	}
+
+	// Apply provided options
+	for _, opt := range opts {
+		opt(options)
+	}
+
+	return &HTTPHandler{
+		checker:           checker,
+		debugHealthChecks: options.DebugHealthChecks,
+	}
 }
 
 // LivenessHandler handles liveness probe requests.
 func (h *HTTPHandler) LivenessHandler(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	log.Debug(ctx, "Liveness check requested")
+	if h.debugHealthChecks {
+		log.Debug(ctx, "Liveness check requested")
+	}
 
 	response := h.checker.CheckLiveness(ctx)
 
@@ -296,14 +324,18 @@ func (h *HTTPHandler) LivenessHandler(writer http.ResponseWriter, request *http.
 		return
 	}
 
-	log.Debug(ctx, "Liveness check completed", "status", string(response.Status))
+	if h.debugHealthChecks {
+		log.Debug(ctx, "Liveness check completed", "status", string(response.Status))
+	}
 }
 
 // ReadinessHandler handles readiness probe requests.
 func (h *HTTPHandler) ReadinessHandler(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	log.Debug(ctx, "Readiness check requested")
+	if h.debugHealthChecks {
+		log.Debug(ctx, "Readiness check requested")
+	}
 
 	response := h.checker.CheckReadiness(ctx)
 
@@ -335,11 +367,13 @@ func (h *HTTPHandler) ReadinessHandler(writer http.ResponseWriter, request *http
 		return
 	}
 
-	log.Debug(ctx, "Readiness check completed",
-		"status", string(response.Status),
-		"status_code", statusCode,
-		"healthy_checks", response.Summary["healthy"],
-		"unhealthy_checks", response.Summary["unhealthy"],
-		"degraded_checks", response.Summary["degraded"],
-	)
+	if h.debugHealthChecks {
+		log.Debug(ctx, "Readiness check completed",
+			"status", string(response.Status),
+			"status_code", statusCode,
+			"healthy_checks", response.Summary["healthy"],
+			"unhealthy_checks", response.Summary["unhealthy"],
+			"degraded_checks", response.Summary["degraded"],
+		)
+	}
 }
