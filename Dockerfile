@@ -1,5 +1,5 @@
 # Build stage
-FROM docker.io/golang:1.24.5-alpine AS builder
+FROM docker.io/golang:1.24.5-alpine@sha256:ddf52008bce1be455fe2b22d780b6693259aaf97b16383b6372f4b22dd33ad66 AS builder
 
 # Set build environment for static linking
 ENV CGO_ENABLED=0 \
@@ -38,7 +38,7 @@ RUN go build \
     ./cmd/schwab-proxy
 
 # Runtime stage - distroless for maximum security
-FROM gcr.io/distroless/static-debian12:nonroot
+FROM gcr.io/distroless/static-debian12:nonroot@sha256:627d6c5a23ad24e6bdff827f16c7b60e0289029b0c79e9f7ccd54ae3279fb45f
 
 LABEL org.opencontainers.image.source=https://github.com/jkoelker/schwab-proxy
 
