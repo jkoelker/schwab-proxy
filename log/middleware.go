@@ -1,11 +1,16 @@
 package log
 
 import (
+	"bufio"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
+	"net"
 	"net/http"
 	"strings"
+
+	"github.com/jkoelker/schwab-proxy/middleware"
 )
 
 const (
@@ -90,7 +95,7 @@ func LoggingMiddleware(next http.Handler, opts ...func(*LoggingOptions)) http.Ha
 		Log(ctx, level, "HTTP request started",
 			"method", request.Method,
 			"path", request.URL.Path,
-			"remote_addr", request.RemoteAddr,
+			"remote_addr", middleware.GetRealIP(request),
 			"user_agent", request.Header.Get("User-Agent"),
 		)
 
@@ -119,6 +124,16 @@ type responseWriter struct {
 func (rw *responseWriter) WriteHeader(code int) {
 	rw.statusCode = code
 	rw.ResponseWriter.WriteHeader(code)
+}
+
+// Hijack implements the http.Hijacker interface to support WebSocket upgrades.
+func (rw *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	conn, buf, err := middleware.HijackConnection(rw.ResponseWriter, &rw.statusCode)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error hijacking connection: %w", err)
+	}
+
+	return conn, buf, nil
 }
 
 // generateCorrelationID creates a new random correlation ID.

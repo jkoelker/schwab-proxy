@@ -31,11 +31,46 @@ def test_api_calls(client):
 
     # Initialize account_hash for later tests
     account_hash = None
+    
+    # Helper function to handle 401 errors
+    def make_request_with_retry(request_func, *args, **kwargs):
+        """Make a request and retry once if we get a 401"""
+        response = request_func(*args, **kwargs)
+        
+        if response.status_code == 401:
+            print("      Got 401, attempting to refresh token...")
+            try:
+                # Manually refresh the token
+                if hasattr(client, 'session') and hasattr(client.session, 'refresh_token'):
+                    # Get the token endpoint from the patched auth module
+                    import schwab
+                    token_endpoint = schwab.auth.TOKEN_ENDPOINT
+                    
+                    # Get current token
+                    if hasattr(client.session, 'token') and client.session.token:
+                        refresh_token = client.session.token.get('refresh_token')
+                        if refresh_token:
+                            print("      Refreshing token...")
+                            client.session.refresh_token(token_endpoint, refresh_token=refresh_token)
+                            print("      Token refreshed successfully")
+                        else:
+                            print("      No refresh token available")
+                
+                # Retry the request
+                response = request_func(*args, **kwargs)
+                
+                if response.status_code == 401:
+                    print("      Still got 401 after token refresh.")
+                    print("      Try deleting the token file and re-authenticating.")
+            except Exception as e:
+                print(f"      Failed to refresh token: {e}")
+            
+        return response
 
     # Test 1: Account Numbers (no parameters required)
     print("\n1. Testing get_account_numbers()...")
     try:
-        response = client.get_account_numbers()
+        response = make_request_with_retry(client.get_account_numbers)
         print(f"   ✓ Success: {response.status_code}")
         if response.status_code == 200:
             data = response.json()
@@ -54,7 +89,7 @@ def test_api_calls(client):
     # Test 2: User Preferences (no parameters required)
     print("\n2. Testing get_user_preferences()...")
     try:
-        response = client.get_user_preferences()
+        response = make_request_with_retry(client.get_user_preferences)
         print(f"   ✓ Success: {response.status_code}")
         if response.status_code == 200:
             data = response.json()
@@ -69,7 +104,7 @@ def test_api_calls(client):
     # Test 3: All Accounts
     print("\n3. Testing get_accounts()...")
     try:
-        response = client.get_accounts()
+        response = make_request_with_retry(client.get_accounts)
         print(f"   ✓ Success: {response.status_code}")
         if response.status_code == 200:
             data = response.json()
@@ -84,7 +119,7 @@ def test_api_calls(client):
     # Test 4: Single Stock Quote
     print("\n4. Testing get_quote('AAPL')...")
     try:
-        response = client.get_quote("AAPL")
+        response = make_request_with_retry(client.get_quote, "AAPL")
         print(f"   ✓ Success: {response.status_code}")
         if response.status_code == 200:
             data = response.json()
@@ -109,7 +144,7 @@ def test_api_calls(client):
     # Test 5: Multiple Stock Quotes
     print("\n5. Testing get_quotes(['AAPL', 'GOOGL', 'MSFT'])...")
     try:
-        response = client.get_quotes(["AAPL", "GOOGL", "MSFT"])
+        response = make_request_with_retry(client.get_quotes, ["AAPL", "GOOGL", "MSFT"])
         print(f"   ✓ Success: {response.status_code}")
         if response.status_code == 200:
             data = response.json()
@@ -133,7 +168,7 @@ def test_api_calls(client):
     print("\n6. Testing get_market_hours(['equity'])...")
     try:
         # Use the correct Market enum from client.MarketHours.Market
-        response = client.get_market_hours([client.MarketHours.Market.EQUITY])
+        response = make_request_with_retry(client.get_market_hours, [client.MarketHours.Market.EQUITY])
         print(f"   ✓ Success: {response.status_code}")
         if response.status_code == 200:
             data = response.json()
@@ -149,7 +184,7 @@ def test_api_calls(client):
     if account_hash:
         print(f"\n7. Testing get_account('{account_hash}')...")
         try:
-            response = client.get_account(account_hash)
+            response = make_request_with_retry(client.get_account, account_hash)
             print(f"   ✓ Success: {response.status_code}")
             if response.status_code == 200:
                 data = response.json()

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -17,6 +16,7 @@ import (
 	"github.com/jkoelker/schwab-proxy/log"
 	"github.com/jkoelker/schwab-proxy/observability"
 	"github.com/jkoelker/schwab-proxy/storage"
+	"github.com/jkoelker/schwab-proxy/streaming"
 )
 
 // contextKey is a custom type for context keys to avoid collisions.
@@ -42,34 +42,17 @@ type APIProxy struct {
 	otelProviders *observability.OTelProviders
 	server        *auth.Server
 	storage       *storage.Store
-	logger        *slog.Logger
 
 	// Background refresh management
 	refreshCancel context.CancelFunc
+
+	// Streaming support
+	streamManager *streaming.Proxy
 }
 
-// NewAPIProxy creates a new API proxy server.
-func NewAPIProxy(
-	cfg *config.Config,
-	schwabClient api.ProviderClient,
-	tokenService auth.TokenServicer,
-	clientService *auth.ClientService,
-	store *storage.Store,
-	otelProviders *observability.OTelProviders,
-) (*APIProxy, error) {
-	// Create health checker
-	healthChecker := health.NewManager("schwab-proxy-1.0.0")
-
-	// Add storage health check
-	healthChecker.AddChecker(health.NewStorageChecker(store))
-
-	// Add provider API health check
-	healthChecker.AddChecker(health.NewProviderChecker(schwabClient))
-
-	// Create OAuth2 server
-	storageAdapter := auth.NewStorageAdapter(store)
-
-	// Get JWT KDF parameters and derive key
+// deriveJWTSigningKey derives the JWT signing key from configuration.
+func deriveJWTSigningKey(cfg *config.Config) ([]byte, error) {
+	// Get JWT KDF parameters
 	jwtKDFParams, err := cfg.GetJWTKDFParams()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get JWT KDF parameters: %w", err)
@@ -87,13 +70,40 @@ func NewAPIProxy(
 		return nil, fmt.Errorf("failed to get JWT salt: %w", err)
 	}
 
-	jwtSigningKey, err := jwtKDFParams.DeriveKey(
+	// Derive the key
+	key, err := jwtKDFParams.DeriveKey(
 		[]byte(cfg.JWTSeed),
 		jwtSalt,
 		auth.JWTKeySize,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to derive JWT signing key: %w", err)
+	}
+
+	return key, nil
+}
+
+// NewAPIProxy creates a new API proxy server.
+func NewAPIProxy(
+	cfg *config.Config,
+	schwabClient api.ProviderClient,
+	tokenService auth.TokenServicer,
+	clientService *auth.ClientService,
+	store *storage.Store,
+	otelProviders *observability.OTelProviders,
+) (*APIProxy, error) {
+	// Create health checker
+	healthChecker := health.NewManager("schwab-proxy-1.0.0")
+	healthChecker.AddChecker(health.NewStorageChecker(store))
+	healthChecker.AddChecker(health.NewProviderChecker(schwabClient))
+
+	// Create OAuth2 server
+	storageAdapter := auth.NewStorageAdapter(store)
+
+	// Derive JWT signing key
+	jwtSigningKey, err := deriveJWTSigningKey(cfg)
+	if err != nil {
+		return nil, err
 	}
 
 	server, err := auth.NewServer(storageAdapter, cfg, jwtSigningKey)
@@ -117,7 +127,12 @@ func NewAPIProxy(
 		otelProviders: otelProviders,
 		server:        server,
 		storage:       store,
-		logger:        slog.Default(),
+
+		streamManager: streaming.NewProxy(
+			tokenService,
+			server,
+			streaming.CreateMetadataFunc(schwabClient),
+		),
 	}
 
 	// Set up routes
@@ -125,6 +140,14 @@ func NewAPIProxy(
 
 	// Start background token refresh
 	proxy.startBackgroundTokenRefresh()
+
+	// Start streaming manager if enabled
+	if proxy.streamManager != nil {
+		ctx := context.Background()
+		if err := proxy.streamManager.Start(ctx); err != nil {
+			return nil, fmt.Errorf("failed to start streaming manager: %w", err)
+		}
+	}
 
 	return proxy, nil
 }
@@ -140,10 +163,17 @@ func (p *APIProxy) GetServer() *auth.Server {
 	return p.server
 }
 
-// Shutdown gracefully stops the background token refresh.
-func (p *APIProxy) Shutdown() {
+// Shutdown gracefully stops the background token refresh and streaming manager.
+func (p *APIProxy) Shutdown(ctx context.Context) {
 	if p.refreshCancel != nil {
 		p.refreshCancel()
+	}
+
+	// Shutdown streaming if enabled
+	if p.streamManager != nil {
+		if err := p.streamManager.Shutdown(ctx); err != nil {
+			log.Error(ctx, err, "Failed to shutdown streaming manager")
+		}
 	}
 }
 
@@ -176,7 +206,7 @@ func (p *APIProxy) setupRoutes() {
 	// Trader endpoints - following Schwab's structure: /trader/v1/...
 	p.mux.HandleFunc(
 		"/trader/v1/",
-		p.withTokenValidation(p.withTokenRefresh(p.handleTraderRequest)),
+		p.withTokenValidation(p.withTokenRefresh(p.interceptableTraderRequest)),
 	)
 
 	// Client management endpoints (admin only)
@@ -190,6 +220,11 @@ func (p *APIProxy) setupRoutes() {
 	p.mux.HandleFunc("GET /api/approvals", p.withAPIAuth(p.handleListApprovals))
 	p.mux.HandleFunc("POST /api/approvals/{id}", p.withAPIAuth(p.handleApproveRequest))
 	p.mux.HandleFunc("DELETE /api/approvals/{id}", p.withAPIAuth(p.handleDenyRequest))
+
+	// Streaming endpoint
+	if p.streamManager != nil {
+		p.mux.HandleFunc("/ws/stream", p.streamManager.HandleWebSocket)
+	}
 }
 
 // startBackgroundTokenRefresh starts a goroutine that proactively refreshes the Schwab token.

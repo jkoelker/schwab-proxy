@@ -9,6 +9,7 @@ require (
 	github.com/dgraph-io/badger/v4 v4.8.0
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/google/uuid v1.6.0
+	github.com/gorilla/websocket v1.5.0
 	github.com/ory/fosite v0.49.0
 	github.com/prometheus/client_golang v1.22.0
 	github.com/stretchr/testify v1.10.0
@@ -45,7 +46,6 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/flatbuffers v25.2.10+incompatible // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
-	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.18.1 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.7 // indirect

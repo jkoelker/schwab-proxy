@@ -261,7 +261,7 @@ func handleShutdown(ctx context.Context, server *http.Server, apiProxy *proxy.AP
 	defer cancel()
 
 	// Shutdown background services first
-	apiProxy.Shutdown()
+	apiProxy.Shutdown(shutdownCtx)
 
 	// Shutdown server
 	if err := server.Shutdown(shutdownCtx); err != nil {

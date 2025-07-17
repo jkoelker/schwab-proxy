@@ -17,9 +17,11 @@ jobs:
 
     steps:
       - name: Checkout repository
+        # yamllint disable-line rule:line-length rule:comments
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
       - name: Log in to Container Registry
+        # yamllint disable-line rule:line-length rule:comments
         uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3
         with:
           registry: ghcr.io
@@ -28,6 +30,7 @@ jobs:
 
       - name: Extract metadata
         id: meta
+        # yamllint disable-line rule:line-length rule:comments
         uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
         with:
           images: ghcr.io/jkoelker/schwab-proxy
@@ -37,6 +40,7 @@ jobs:
             type=semver,pattern={{version}}
 
       - name: Build and push Docker image
+        # yamllint disable-line rule:line-length rule:comments
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
         with:
           context: .
