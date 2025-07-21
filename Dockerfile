@@ -24,9 +24,11 @@ COPY health/ ./health/
 COPY kdf/ ./kdf/
 COPY log/ ./log/
 COPY metrics/ ./metrics/
+COPY middleware/ ./middleware/
 COPY observability/ ./observability/
 COPY proxy/ ./proxy/
 COPY storage/ ./storage/
+COPY streaming/ ./streaming/
 COPY tls/ ./tls/
 COPY tracing/ ./tracing/
 

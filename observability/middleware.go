@@ -1,12 +1,15 @@
 package observability
 
 import (
+	"bufio"
 	"fmt"
+	"net"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/jkoelker/schwab-proxy/metrics"
+	"github.com/jkoelker/schwab-proxy/middleware"
 	"github.com/jkoelker/schwab-proxy/tracing"
 )
 
@@ -79,7 +82,7 @@ func TracingMiddleware(next http.Handler) http.Handler {
 			"http.scheme", request.URL.Scheme,
 			"http.host", request.Host,
 			"http.user_agent", request.Header.Get("User-Agent"),
-			"http.remote_addr", request.RemoteAddr,
+			"http.remote_addr", middleware.GetRealIP(request),
 		)
 
 		// Create a response writer wrapper to capture status code
@@ -138,6 +141,16 @@ func (rw *responseWriter) Write(data []byte) (int, error) {
 	}
 
 	return bytesWritten, nil
+}
+
+// Hijack implements the http.Hijacker interface to support WebSocket upgrades.
+func (rw *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	conn, buf, err := middleware.HijackConnection(rw.ResponseWriter, &rw.statusCode)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error hijacking connection: %w", err)
+	}
+
+	return conn, buf, nil
 }
 
 // httpError represents an HTTP error for tracing.

@@ -147,7 +147,7 @@ func (p *APIProxy) handleApproveRequest(writer http.ResponseWriter, request *htt
 	// Delete the approval request
 	if err := p.storage.DeleteApprovalRequest(approvalID); err != nil {
 		// Log but don't fail the request
-		p.logger.Warn("failed to delete approval request", "id", approvalID, "error", err)
+		log.Warn(ctx, "failed to delete approval request", "id", approvalID, "error", err)
 	}
 
 	// Build the complete redirect URL
