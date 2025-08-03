@@ -1,6 +1,6 @@
 # Get as many dependancies from official docker images to allow
 # `dependabot` to manage them for us.
-FROM docker.io/golangci/golangci-lint:v2.2.2@sha256:0f0e3fad35aa127e2823e79809727709bceb6b899ad17362b92a6148ba40c862 as golangci-lint
+FROM docker.io/golangci/golangci-lint:v2.3.1@sha256:faf53744e380715d05d53765e2aa7602e7f04c4c8112fd20c9112ce5f77b6c01 as golangci-lint
 FROM ghcr.io/hadolint/hadolint:2.12.0@sha256:30a8fd2e785ab6176eed53f74769e04f125afb2f74a6c52aef7d463583b6d45e as hadolint
 FROM docker.io/golang:1.24.5-alpine@sha256:daae04ebad0c21149979cd8e9db38f565ecefd8547cf4a591240dc1972cf1399
 
