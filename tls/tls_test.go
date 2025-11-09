@@ -147,6 +147,8 @@ func TestManagerWithFiles(t *testing.T) {
 
 	if loadedCert == nil {
 		t.Fatal("Certificate is nil")
+
+		return
 	}
 
 	// Verify certificate has expected properties

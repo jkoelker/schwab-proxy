@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"os"
+	"slices"
 	"strings"
 	"sync"
 )
@@ -151,10 +152,8 @@ func IsSensitiveKey(key string) bool {
 	keyLower := strings.ToLower(key)
 
 	// Check if this is a whitelisted key
-	for _, safe := range safeKeys {
-		if keyLower == safe {
-			return false
-		}
+	if slices.Contains(safeKeys, keyLower) {
+		return false
 	}
 
 	sensitiveKeys := []string{

@@ -702,7 +702,7 @@ func TestNewStoreWithMigration_MigrationRequired(t *testing.T) {
 
 	// Create legacy database with test data
 	legacyParams := kdf.LegacyPBKDF2Params()
-	testData := map[string]interface{}{
+	testData := map[string]any{
 		"test:1":   "value1",
 		"test:2":   "value2",
 		"client:1": map[string]string{"name": "client1"},
@@ -800,10 +800,10 @@ func TestNewStoreWithMigration_MigrationWithTTL(t *testing.T) {
 }
 
 // verifyComplexData verifies all fields of ComplexData match expected values.
-func verifyComplexData(t *testing.T, expected, actual interface{}) {
+func verifyComplexData(t *testing.T, expected, actual any) {
 	t.Helper()
 
-	// Convert to JSON and back to handle the interface{} types
+	// Convert to JSON and back to handle the any types
 	expectedJSON, err := json.Marshal(expected)
 	if err != nil {
 		t.Fatalf("Failed to marshal expected: %v", err)
@@ -815,7 +815,7 @@ func verifyComplexData(t *testing.T, expected, actual interface{}) {
 	}
 
 	// Parse JSON to maps for field-by-field comparison
-	var expectedMap, actualMap map[string]interface{}
+	var expectedMap, actualMap map[string]any
 	if err := json.Unmarshal(expectedJSON, &expectedMap); err != nil {
 		t.Fatalf("Failed to unmarshal expected: %v", err)
 	}
@@ -948,14 +948,14 @@ func createLegacyDatabase(
 func verifyMigratedData(
 	t *testing.T,
 	store *storage.Store,
-	testData map[string]interface{},
+	testData map[string]any,
 ) {
 	t.Helper()
 
 	ctx := t.Context()
 
 	for key, expectedValue := range testData {
-		var actualValue interface{}
+		var actualValue any
 
 		if err := store.Get(ctx, key, &actualValue); err != nil {
 			t.Errorf("Failed to get migrated key %s: %v", key, err)

@@ -32,23 +32,23 @@ func TestMigration_LegacyToDefault(t *testing.T) {
 	seed := []byte("test-seed-12345")
 
 	// Create test data with various key types
-	testData := map[string]interface{}{
+	testData := map[string]any{
 		"client:test-client": auth.Client{
 			ID:     "test-client",
 			Name:   "Test Client",
 			Secret: []byte("test-secret"),
 		},
-		"access:test-access-token": map[string]interface{}{
+		"access:test-access-token": map[string]any{
 			"client_id": "test-client",
 			"scopes":    []string{"offline_access"},
-			"session":   map[string]interface{}{"foo": "bar"},
+			"session":   map[string]any{"foo": "bar"},
 		},
-		"refresh:test-refresh": map[string]interface{}{
+		"refresh:test-refresh": map[string]any{
 			"client_id":        "test-client",
 			"scopes":           []string{"offline_access"},
 			"access_signature": "test-access-token",
 		},
-		"oauth:current": map[string]interface{}{
+		"oauth:current": map[string]any{
 			"access_token":  "provider-token",
 			"refresh_token": "provider-refresh",
 			"expires_in":    3600,
@@ -97,7 +97,7 @@ func TestMigration_LegacyToDefault(t *testing.T) {
 	t.Run("VerifyAccessToken", func(t *testing.T) {
 		t.Parallel()
 
-		var tokenData map[string]interface{}
+		var tokenData map[string]any
 		if err := store.Get(ctx, "access:test-access-token", &tokenData); err != nil {
 			t.Errorf("Failed to get migrated access token: %v", err)
 		}
@@ -110,7 +110,7 @@ func TestMigration_LegacyToDefault(t *testing.T) {
 	t.Run("VerifyRefreshToken", func(t *testing.T) {
 		t.Parallel()
 
-		var tokenData map[string]interface{}
+		var tokenData map[string]any
 		if err := store.Get(ctx, "refresh:test-refresh", &tokenData); err != nil {
 			t.Errorf("Failed to get migrated refresh token: %v", err)
 		}
@@ -123,7 +123,7 @@ func TestMigration_LegacyToDefault(t *testing.T) {
 	t.Run("VerifyOAuthToken", func(t *testing.T) {
 		t.Parallel()
 
-		var oauthData map[string]interface{}
+		var oauthData map[string]any
 		if err := store.Get(ctx, "oauth:current", &oauthData); err != nil {
 			t.Errorf("Failed to get migrated OAuth token: %v", err)
 		}
@@ -172,18 +172,18 @@ func TestMigration_WithTTL(t *testing.T) {
 	ttl24Hours := 24 * time.Hour
 
 	testData := map[string]struct {
-		value interface{}
+		value any
 		ttl   time.Duration
 	}{
 		"access:short-lived": {
-			value: map[string]interface{}{
+			value: map[string]any{
 				"client_id": "test-client",
 				"scopes":    []string{"offline_access"},
 			},
 			ttl: ttl1Hour,
 		},
 		"refresh:long-lived": {
-			value: map[string]interface{}{
+			value: map[string]any{
 				"client_id": "test-client",
 				"scopes":    []string{"offline_access"},
 			},
@@ -256,11 +256,11 @@ func TestMigration_WithTTL(t *testing.T) {
 		}
 
 		// Verify data integrity
-		var value interface{}
+		var value any
 
 		switch key {
 		case "access:short-lived", "refresh:long-lived":
-			var tokenData map[string]interface{}
+			var tokenData map[string]any
 			if err := store2.Get(ctx, key, &tokenData); err != nil {
 				t.Errorf("Failed to get %s after migration: %v", key, err)
 			}
@@ -319,7 +319,7 @@ func TestMigration_CrossKDFTypes(t *testing.T) {
 			seed := []byte("test-seed-cross-kdf")
 
 			// Create test data
-			testData := map[string]interface{}{
+			testData := map[string]any{
 				"test:key1": "value1",
 				"test:key2": map[string]string{"nested": "value"},
 				"test:key3": []string{"array", "of", "values"},
@@ -344,7 +344,7 @@ func TestMigration_CrossKDFTypes(t *testing.T) {
 
 			// Verify all data migrated
 			for key, expectedValue := range testData {
-				var actualValue interface{}
+				var actualValue any
 				if err := store.Get(ctx, key, &actualValue); err != nil {
 					t.Errorf("Failed to get %s after migration: %v", key, err)
 				}
@@ -393,11 +393,11 @@ func TestMigration_LargeDataset(t *testing.T) {
 
 	// Create a large dataset
 	numKeys := 1000
-	testData := make(map[string]interface{})
+	testData := make(map[string]any)
 
 	for idx := range numKeys {
 		key := ""
-		value := interface{}(nil)
+		value := any(nil)
 
 		switch idx % 5 {
 		case 0: // Clients
@@ -409,13 +409,13 @@ func TestMigration_LargeDataset(t *testing.T) {
 			}
 		case 1: // Access tokens
 			key = "access:" + randomString(t, 32)
-			value = map[string]interface{}{
+			value = map[string]any{
 				"client_id": "client-" + randomString(t, 8),
 				"scopes":    []string{"offline_access"},
 			}
 		case 2: // Refresh tokens
 			key = "refresh:" + randomString(t, 32)
-			value = map[string]interface{}{
+			value = map[string]any{
 				"client_id":        "client-" + randomString(t, 8),
 				"scopes":           []string{"offline_access"},
 				"access_signature": randomString(t, 32),
@@ -428,7 +428,7 @@ func TestMigration_LargeDataset(t *testing.T) {
 			}
 		case 4: // Generic data
 			key = "data:" + randomString(t, 16)
-			value = map[string]interface{}{
+			value = map[string]any{
 				"field1": randomString(t, 32),
 				"field2": idx,
 				"field3": time.Now().Unix(),
@@ -466,7 +466,7 @@ func TestMigration_LargeDataset(t *testing.T) {
 			break
 		}
 
-		var actualValue interface{}
+		var actualValue any
 		if err := store.Get(ctx, key, &actualValue); err != nil {
 			t.Errorf("Failed to get %s after migration: %v", key, err)
 
@@ -544,7 +544,7 @@ func openTestDatabase(dbPath string, encryptionKey []byte) (*badger.DB, error) {
 }
 
 // writeTestData writes test data to the database.
-func writeTestData(database *badger.DB, testData map[string]interface{}) error {
+func writeTestData(database *badger.DB, testData map[string]any) error {
 	if err := database.Update(func(txn *badger.Txn) error {
 		for key, value := range testData {
 			data, err := json.Marshal(value)
@@ -570,7 +570,7 @@ func createTestDatabase(
 	dbPath string,
 	seed []byte,
 	params kdf.Params,
-	testData map[string]interface{},
+	testData map[string]any,
 ) error {
 	t.Helper()
 

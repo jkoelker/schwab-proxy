@@ -9,7 +9,6 @@ import (
 	"github.com/jkoelker/schwab-proxy/log"
 )
 
-// Client request/response structures.
 type CreateClientRequest struct {
 	Name        string   `json:"name"`
 	Description string   `json:"description"`

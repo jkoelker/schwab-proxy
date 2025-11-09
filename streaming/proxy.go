@@ -565,7 +565,7 @@ func (sp *Proxy) authenticateMaster(ctx context.Context, metadata *Metadata) err
 			RequestID:              "master_login",
 			SchwabClientCustomerID: metadata.CustomerID,
 			SchwabClientCorrelID:   metadata.CorrelID,
-			Parameters: map[string]interface{}{
+			Parameters: map[string]any{
 				"Authorization":          token.AccessToken,
 				"SchwabClientChannel":    metadata.Channel,
 				"SchwabClientFunctionId": metadata.FunctionID,

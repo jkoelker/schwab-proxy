@@ -12,10 +12,10 @@ import (
 type HashType string
 
 const (
-	// TypeSHA256 is the name for the SHA-256 hash function.
+	// HashTypeSHA256 is the name for the SHA-256 hash function.
 	HashTypeSHA256 HashType = "sha256"
 
-	// TypeSHA512 is the name for the SHA-512 hash function.
+	// HashTypeSHA512 is the name for the SHA-512 hash function.
 	HashTypeSHA512 HashType = "sha512"
 
 	// legacyIterations is the number of iterations used in legacy PBKDF2.

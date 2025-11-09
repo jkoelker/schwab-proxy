@@ -18,7 +18,7 @@ func TestProxy(t *testing.T) {
 	tokenManager := &mockTokenManager{}
 
 	// Create a minimal auth server for testing
-	mockStore := &mockStorage{data: make(map[string]interface{})}
+	mockStore := &mockStorage{data: make(map[string]any)}
 	signingKey := []byte("test-key-that-is-at-least-32-bytes-long")
 	testConfig := &config.Config{
 		OAuth2AccessTokenExpiry:  12 * time.Hour,
@@ -100,7 +100,7 @@ func (m *mockTokenManager) NeedsProactiveRefresh(_ context.Context) bool {
 
 // Mock storage for auth server.
 type mockStorage struct {
-	data map[string]interface{}
+	data map[string]any
 }
 
 func (m *mockStorage) Get(key string, value any) error {
