@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/ory/fosite"
@@ -36,10 +37,8 @@ type Client struct {
 
 // ensureOfflineAccess adds offline_access scope if not already present.
 func ensureOfflineAccess(scopes []string) []string {
-	for _, scope := range scopes {
-		if scope == "offline_access" {
-			return scopes
-		}
+	if slices.Contains(scopes, "offline_access") {
+		return scopes
 	}
 
 	return append(scopes, "offline_access")

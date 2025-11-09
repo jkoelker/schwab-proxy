@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"strings"
 	"time"
@@ -517,9 +518,7 @@ func (p *APIProxy) forwardRequest(writer http.ResponseWriter, request *http.Requ
 	}()
 
 	// Copy response headers
-	for k, values := range resp.Header {
-		writer.Header()[k] = values
-	}
+	maps.Copy(writer.Header(), resp.Header)
 
 	// Set the status code
 	writer.WriteHeader(resp.StatusCode)

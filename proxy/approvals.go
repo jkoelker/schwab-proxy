@@ -111,7 +111,7 @@ func (p *APIProxy) handleApproveRequest(writer http.ResponseWriter, request *htt
 	// Create session
 	session := &fosite.DefaultSession{
 		Subject: approval.Subject,
-		Extra:   map[string]interface{}{},
+		Extra:   map[string]any{},
 	}
 
 	// Grant scopes

@@ -306,9 +306,8 @@ func applyScryptParam(params *ScryptParams, key, value string) error {
 // parseKeyValuePairs parses comma-separated key=value pairs.
 func parseKeyValuePairs(s string) map[string]string {
 	pairs := make(map[string]string)
-	parts := strings.Split(s, ",")
 
-	for _, part := range parts {
+	for part := range strings.SplitSeq(s, ",") {
 		kv := strings.SplitN(strings.TrimSpace(part), "=", kvParts)
 		if len(kv) == kvParts {
 			pairs[strings.ToLower(strings.TrimSpace(kv[0]))] = strings.TrimSpace(kv[1])

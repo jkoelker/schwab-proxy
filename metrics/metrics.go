@@ -54,7 +54,7 @@ type Counter struct {
 	instrument metric.Int64Counter
 }
 
-// Counter creates a new counter from the context.
+// CounterFromContext creates a new counter from the context.
 func CounterFromContext(
 	ctx context.Context,
 	name string,

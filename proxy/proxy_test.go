@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -416,9 +417,7 @@ func TestResponseHeaderHandling(t *testing.T) {
 	mockResponse.Header["Cache-Control"] = []string{"no-cache"}
 
 	// Simulate the header copying behavior from proxy.forwardRequest
-	for k, values := range mockResponse.Header {
-		recorder.Header()[k] = values
-	}
+	maps.Copy(recorder.Header(), mockResponse.Header)
 
 	// Verify headers were copied without duplication
 	contentTypes := recorder.Header()["Content-Type"]

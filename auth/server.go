@@ -113,7 +113,7 @@ func (s *Server) HandleAuthorizeRequest(writer http.ResponseWriter, request *htt
 	// Create a basic session
 	session := &fosite.DefaultSession{
 		Subject: "user123", // This would come from authenticated user
-		Extra:   map[string]interface{}{},
+		Extra:   map[string]any{},
 	}
 
 	// Ensure the request has an ID
@@ -147,7 +147,7 @@ func (s *Server) HandleTokenRequest(writer http.ResponseWriter, request *http.Re
 
 	// Create a new session for the token request
 	session := &fosite.DefaultSession{
-		Extra: map[string]interface{}{},
+		Extra: map[string]any{},
 	}
 
 	// Parse the token request
@@ -412,7 +412,7 @@ func (s *Storage) RevokeAccessToken(_ context.Context, requestID string) error {
 	return nil
 }
 
-// Required by fosite.Storage but can be no-ops for basic implementation.
+// Authenticate is required by fosite.Storage but can be no-ops for basic implementation.
 func (s *Storage) Authenticate(_ context.Context, _ string) error {
 	return nil
 }
