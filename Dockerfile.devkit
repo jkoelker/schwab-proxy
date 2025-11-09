@@ -2,7 +2,7 @@
 # `dependabot` to manage them for us.
 FROM docker.io/golangci/golangci-lint:v2.6.1@sha256:5f3233d598921b58acef310807332ae5e5ea98130c9ea4c97a9190837de75bca as golangci-lint
 FROM ghcr.io/hadolint/hadolint:v2.14.0@sha256:27086352fd5e1907ea2b934eb1023f217c5ae087992eb59fde121dce9c9ff21e as hadolint
-FROM docker.io/golang:1.24.5-alpine@sha256:daae04ebad0c21149979cd8e9db38f565ecefd8547cf4a591240dc1972cf1399
+FROM docker.io/golang:1.25.4-alpine@sha256:d3f0cf7723f3429e3f9ed846243970b20a2de7bae6a5b66fc5914e228d831bbb
 
 RUN apk add --no-cache \
     bash==5.2.37-r0 \
