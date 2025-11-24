@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"sync"
 	"time"
@@ -21,6 +22,10 @@ const defaultMetadataTTL = 24 * time.Hour
 type UserPreferencesResponse struct {
 	//nolint:tagliatelle // Schwab API response structure
 	StreamerInfo []StreamerInfo `json:"streamerInfo"`
+
+	// Extras stores any additional fields returned by the Schwab API so they
+	// are preserved when the response is re-encoded and forwarded.
+	Extras map[string]json.RawMessage `json:"-"`
 }
 
 // StreamerInfo contains streaming configuration.
@@ -39,6 +44,54 @@ type StreamerInfo struct {
 
 	//nolint:tagliatelle // Schwab API response structure
 	SchwabClientFunctionID string `json:"schwabClientFunctionId"`
+}
+
+// UnmarshalJSON captures the streamerInfo plus any other fields in the payload.
+func (u *UserPreferencesResponse) UnmarshalJSON(data []byte) error {
+	var raw map[string]json.RawMessage
+
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return fmt.Errorf("failed to unmarshal user preferences response: %w", err)
+	}
+
+	u.Extras = make(map[string]json.RawMessage, len(raw))
+
+	for key, value := range raw {
+		if key == "streamerInfo" {
+			if err := json.Unmarshal(value, &u.StreamerInfo); err != nil {
+				return fmt.Errorf("failed to unmarshal streamerInfo: %w", err)
+			}
+
+			continue
+		}
+
+		u.Extras[key] = value
+	}
+
+	return nil
+}
+
+// MarshalJSON writes streamerInfo along with any preserved extra fields.
+func (u UserPreferencesResponse) MarshalJSON() ([]byte, error) {
+	raw := make(map[string]json.RawMessage, len(u.Extras)+1)
+
+	maps.Copy(raw, u.Extras)
+
+	if u.StreamerInfo != nil {
+		streamerInfoBytes, err := json.Marshal(u.StreamerInfo)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal streamerInfo: %w", err)
+		}
+
+		raw["streamerInfo"] = streamerInfoBytes
+	}
+
+	bytes, err := json.Marshal(raw)
+	if err != nil {
+		return nil, fmt.Errorf("marshal user preferences: %w", err)
+	}
+
+	return bytes, nil
 }
 
 // MetadataManager manages streaming metadata with caching.
