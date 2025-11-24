@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/jkoelker/schwab-proxy/storage"
 )
 
@@ -95,6 +97,37 @@ func (s *ClientService) UpdateClient(ctx context.Context, clientID string, updat
 	}
 
 	return client, nil
+}
+
+// RotateClientSecret generates and sets a new secret for the client, returning it in plaintext once.
+func (s *ClientService) RotateClientSecret(ctx context.Context, clientID string) (*ClientWithSecret, error) {
+	client, err := s.GetClient(ctx, clientID)
+	if err != nil {
+		return nil, err
+	}
+
+	secret, err := GenerateRandomString(clientSecretLength)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate client secret: %w", err)
+	}
+
+	hashedSecret, err := bcrypt.GenerateFromPassword([]byte(secret), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, fmt.Errorf("failed to hash client secret: %w", err)
+	}
+
+	client.Secret = hashedSecret
+	client.UpdatedAt = time.Now()
+
+	key := storage.PrefixClient + clientID
+	if err := s.store.Set(ctx, key, client, 0); err != nil {
+		return nil, fmt.Errorf("failed to store rotated client secret: %w", err)
+	}
+
+	return &ClientWithSecret{
+		Client:          client,
+		PlaintextSecret: secret,
+	}, nil
 }
 
 // DeleteClient removes a client.

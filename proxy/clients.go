@@ -41,6 +41,50 @@ type ClientWithSecretResponse struct {
 	Secret string `json:"secret"`
 }
 
+// handleRotateClientSecret rotates and returns a new client secret.
+func (p *APIProxy) handleRotateClientSecret(writer http.ResponseWriter, request *http.Request) {
+	clientID := request.PathValue("id")
+	if clientID == "" {
+		http.Error(writer, "Client ID is required", http.StatusBadRequest)
+
+		return
+	}
+
+	client, err := p.clientService.RotateClientSecret(request.Context(), clientID)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			http.Error(writer, "Client not found", http.StatusNotFound)
+		} else {
+			log.Error(request.Context(), err, "failed to rotate client secret")
+			http.Error(writer, "Failed to rotate client secret", http.StatusInternalServerError)
+		}
+
+		return
+	}
+
+	response := ClientWithSecretResponse{
+		ClientResponse: ClientResponse{
+			ID:          client.ID,
+			Name:        client.Name,
+			Description: client.Description,
+			RedirectURI: getFirstRedirectURI(client.RedirectURIs),
+			Scopes:      client.Scopes,
+			Active:      client.Active,
+			CreatedAt:   client.CreatedAt.Format("2006-01-02T15:04:05Z"),
+			UpdatedAt:   client.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+		},
+		Secret: client.PlaintextSecret,
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+
+	if err := json.NewEncoder(writer).Encode(response); err != nil {
+		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
+
+		return
+	}
+}
+
 // handleListClients returns all clients.
 func (p *APIProxy) handleListClients(writer http.ResponseWriter, request *http.Request) {
 	clients, err := p.clientService.ListClients(request.Context())

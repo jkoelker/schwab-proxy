@@ -81,7 +81,7 @@ accounts = response.json()
 
 See `python/test_client.py` for a complete example including command-line usage.
 
-## Client Management
+## Client Management (API & CLI)
 
 ### Create a Client
 
@@ -119,6 +119,39 @@ curl -k -X GET https://127.0.0.1:8080/api/clients \
 ```bash
 curl -k -X DELETE https://127.0.0.1:8080/api/clients/client_abc123 \
   -H "Authorization: Bearer $ADMIN_API_KEY"
+```
+
+### Manage Clients with the Built-in CLI
+
+The `schwab-proxy` binary includes admin subcommands, so you don't have to
+handcraft curl calls. It reads your proxy URL and admin key from env vars:
+
+- `SCHWAB_PROXY_URL` (default `https://127.0.0.1:8080`)
+- `ADMIN_API_KEY` (required)
+- `SCHWAB_PROXY_INSECURE` (set to `true` to skip TLS verification for local/self-signed)
+
+Examples:
+
+```bash
+# List clients (table)
+schwab-proxy clients list
+
+# Create a client (prints id + secret)
+schwab-proxy clients create \
+  --name "My App" \
+  --redirect-uri "https://localhost:3000/callback" \
+  --scopes "marketdata,accounts"
+
+# Same, JSON output
+SCHWAB_PROXY_URL=https://proxy.example.com \
+ADMIN_API_KEY=$(cat /data/admin_api_key) \
+schwab-proxy clients create --name "Prod" --redirect-uri "https://app/cb" --json
+
+# Update and deactivate a client
+schwab-proxy clients update --id client_abc123 --inactive
+
+# Delete a client
+schwab-proxy clients delete --id client_abc123
 ```
 
 ## API Examples
