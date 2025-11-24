@@ -91,10 +91,8 @@ func (m *MetadataManager) GetMetadata() (*Metadata, error) {
 }
 
 // CreateMetadataFunc creates a metadata refresh function.
-func CreateMetadataFunc(schwabClient api.ProviderClient) func() (*Metadata, error) {
+func CreateMetadataFunc(ctx context.Context, schwabClient api.ProviderClient) func() (*Metadata, error) {
 	return func() (*Metadata, error) {
-		ctx := context.Background()
-
 		resp, err := schwabClient.Call(ctx, "GET", "/trader/v1/userPreference", nil, nil)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch user preferences: %w", err)

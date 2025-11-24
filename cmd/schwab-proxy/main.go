@@ -10,8 +10,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/urfave/cli/v3"
+
 	"github.com/jkoelker/schwab-proxy/api"
 	"github.com/jkoelker/schwab-proxy/auth"
+	"github.com/jkoelker/schwab-proxy/cmd/schwab-proxy/commands"
 	"github.com/jkoelker/schwab-proxy/config"
 	"github.com/jkoelker/schwab-proxy/log"
 	"github.com/jkoelker/schwab-proxy/observability"
@@ -34,13 +37,31 @@ const (
 )
 
 func main() {
-	if err := run(); err != nil {
+	root := &cli.Command{
+		Name:  "schwab-proxy",
+		Usage: "Schwab OAuth2 proxy and admin CLI",
+		Action: func(ctx context.Context, _ *cli.Command) error {
+			return run(ctx)
+		},
+		Commands: []*cli.Command{
+			{
+				Name:  "run",
+				Usage: "Start the schwab-proxy server",
+				Action: func(ctx context.Context, _ *cli.Command) error {
+					return run(ctx)
+				},
+			},
+			commands.ClientsCommand(),
+		},
+	}
+
+	if err := root.Run(context.Background(), os.Args); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 }
 
-func run() error {
+func run(ctx context.Context) error {
 	// Load configuration
 	cfg, err := config.Load()
 	if err != nil {
@@ -50,15 +71,12 @@ func run() error {
 	// Initialize structured logging
 	log.InitializeLogger(cfg.DebugLogging)
 
-	// Create base context for the application
-	ctx := context.Background()
-
 	// Initialize OpenTelemetry
 	otelProviders, err := initializeOTel(ctx, cfg)
 	if err != nil {
 		return err
 	}
-	defer shutdownOTel(otelProviders)
+	defer shutdownOTel(ctx, otelProviders)
 
 	// Initialize storage
 	store, err := initializeStorage(ctx, cfg)
@@ -79,6 +97,7 @@ func run() error {
 
 	// Create and start server
 	server, apiProxy, err := createServer(
+		ctx,
 		cfg,
 		providerClient,
 		tokenService,
@@ -110,8 +129,8 @@ func initializeOTel(ctx context.Context, cfg *config.Config) (*observability.OTe
 }
 
 // shutdownOTel shuts down OpenTelemetry providers.
-func shutdownOTel(otelProviders *observability.OTelProviders) {
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), otelShutdownTimeout)
+func shutdownOTel(ctx context.Context, otelProviders *observability.OTelProviders) {
+	shutdownCtx, cancel := context.WithTimeout(ctx, otelShutdownTimeout)
 	defer cancel()
 
 	if err := otelProviders.Shutdown(shutdownCtx); err != nil {
@@ -178,6 +197,7 @@ func initializeTLS(ctx context.Context, cfg *config.Config) (*tls.Manager, error
 
 // createServer creates and configures the HTTP server.
 func createServer(
+	ctx context.Context,
 	cfg *config.Config,
 	providerClient *api.SchwabClient,
 	tokenService *auth.TokenService,
@@ -188,6 +208,7 @@ func createServer(
 ) (*http.Server, *proxy.APIProxy, error) {
 	// Create API proxy
 	apiProxy, err := proxy.NewAPIProxy(
+		ctx,
 		cfg,
 		providerClient,
 		tokenService,

@@ -16,6 +16,7 @@ RUN go mod download && go mod verify
 
 # Copy only Go source files and directories for better caching
 # This prevents cache invalidation from non-Go file changes
+COPY admin/ ./admin/
 COPY api/ ./api/
 COPY auth/ ./auth/
 COPY cmd/ ./cmd/

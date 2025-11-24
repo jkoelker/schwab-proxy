@@ -119,7 +119,15 @@ func createTestProxy(t *testing.T) (*proxy.APIProxy, func()) {
 	mockProvider := &MockProviderClient{}
 
 	// Create proxy with nil OTel providers for testing
-	proxyInstance, err := proxy.NewAPIProxy(cfg, mockProvider, tokenService, clientService, store, nil)
+	proxyInstance, err := proxy.NewAPIProxy(
+		context.Background(),
+		cfg,
+		mockProvider,
+		tokenService,
+		clientService,
+		store,
+		nil,
+	)
 	if err != nil {
 		t.Fatalf("Failed to create proxy: %v", err)
 	}

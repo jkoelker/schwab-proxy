@@ -86,6 +86,7 @@ func deriveJWTSigningKey(cfg *config.Config) ([]byte, error) {
 
 // NewAPIProxy creates a new API proxy server.
 func NewAPIProxy(
+	ctx context.Context,
 	cfg *config.Config,
 	schwabClient api.ProviderClient,
 	tokenService auth.TokenServicer,
@@ -132,7 +133,7 @@ func NewAPIProxy(
 		streamManager: streaming.NewProxy(
 			tokenService,
 			server,
-			streaming.CreateMetadataFunc(schwabClient),
+			streaming.CreateMetadataFunc(ctx, schwabClient),
 		),
 	}
 
@@ -140,11 +141,10 @@ func NewAPIProxy(
 	proxy.setupRoutes()
 
 	// Start background token refresh
-	proxy.startBackgroundTokenRefresh()
+	proxy.startBackgroundTokenRefresh(ctx)
 
 	// Start streaming manager if enabled
 	if proxy.streamManager != nil {
-		ctx := context.Background()
 		if err := proxy.streamManager.Start(ctx); err != nil {
 			return nil, fmt.Errorf("failed to start streaming manager: %w", err)
 		}
@@ -216,6 +216,7 @@ func (p *APIProxy) setupRoutes() {
 	p.mux.HandleFunc("GET /api/clients/{id}", p.withAPIAuth(p.handleGetClient))
 	p.mux.HandleFunc("PUT /api/clients/{id}", p.withAPIAuth(p.handleUpdateClient))
 	p.mux.HandleFunc("DELETE /api/clients/{id}", p.withAPIAuth(p.handleDeleteClient))
+	p.mux.HandleFunc("POST /api/clients/{id}/secret", p.withAPIAuth(p.handleRotateClientSecret))
 
 	// Approval queue endpoints (admin only)
 	p.mux.HandleFunc("GET /api/approvals", p.withAPIAuth(p.handleListApprovals))
@@ -229,8 +230,8 @@ func (p *APIProxy) setupRoutes() {
 }
 
 // startBackgroundTokenRefresh starts a goroutine that proactively refreshes the Schwab token.
-func (p *APIProxy) startBackgroundTokenRefresh() {
-	ctx, cancel := context.WithCancel(context.Background())
+func (p *APIProxy) startBackgroundTokenRefresh(ctx context.Context) {
+	ctx, cancel := context.WithCancel(ctx)
 	p.refreshCancel = cancel
 
 	go func() {
