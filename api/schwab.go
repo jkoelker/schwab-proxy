@@ -274,6 +274,15 @@ func (c *SchwabClient) Call(
 
 	requestURL := c.buildRequestURL(endpoint)
 
+	// Build request. When body is empty (common for GET), ensure GetBody is set
+	// so the http2 transport can automatically retry on GOAWAY/stream errors.
+	// Without GetBody, Go refuses to replay the request after the body has been
+	// written, leading to errors like "cannot retry ... after Request.Body was
+	// written; define Request.GetBody to avoid this error".
+	if body == http.NoBody {
+		body = nil
+	}
+
 	req, err := http.NewRequestWithContext(ctx, method, requestURL, body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
@@ -281,6 +290,16 @@ func (c *SchwabClient) Call(
 
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	c.copyHeaders(req, headers)
+
+	// For requests with no body, explicitly provide a GetBody implementation so
+	// the transport can transparently retry idempotent calls when a connection
+	// is closed with GOAWAY. This keeps high-concurrency market data calls from
+	// failing spuriously during server-initiated connection shutdown.
+	if req.GetBody == nil && (body == nil || body == http.NoBody) {
+		req.GetBody = func() (io.ReadCloser, error) {
+			return http.NoBody, nil
+		}
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
