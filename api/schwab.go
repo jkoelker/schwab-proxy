@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -23,6 +24,22 @@ import (
 const (
 	// httpClientTimeout is the timeout for HTTP client requests.
 	httpClientTimeout = 30 * time.Second
+
+	// http transport tuning.
+	httpDialTimeout           = 30 * time.Second
+	httpDialKeepAlive         = 30 * time.Second
+	httpMaxIdleConns          = 100
+	httpIdleConnTimeout       = 90 * time.Second
+	httpTLSHandshakeTimeout   = 10 * time.Second
+	httpExpectContinueTimeout = 1 * time.Second
+
+	// httpClientMaxConnsPerHost limits parallel sockets to a Schwab host to keep
+	// stream counts low and avoid server GOAWAYs under load.
+	httpClientMaxConnsPerHost = 10
+
+	// httpClientMaxIdleConnsPerHost keeps a small warm pool matching the max
+	// active connections so we reuse sockets without over-provisioning.
+	httpClientMaxIdleConnsPerHost = httpClientMaxConnsPerHost
 
 	// stateRandomLength is the length of random bytes for state generation.
 	stateRandomLength = 32
@@ -77,12 +94,37 @@ func NewSchwabClient(cfg *config.Config, tokenService auth.TokenServicer) *Schwa
 
 	client := &SchwabClient{
 		config:       cfg,
-		httpClient:   &http.Client{Timeout: httpClientTimeout},
+		httpClient:   newHTTPClient(),
 		tokenService: tokenService,
 		oauth2Config: oauth2Cfg,
 	}
 
 	return client
+}
+
+// newHTTPClient builds the shared HTTP client with conservative per-host
+// connection limits to stay under Schwab's rate/stream expectations while still
+// allowing limited parallelism.
+func newHTTPClient() *http.Client {
+	transport := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   httpDialTimeout,
+			KeepAlive: httpDialKeepAlive,
+		}).DialContext,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          httpMaxIdleConns,
+		IdleConnTimeout:       httpIdleConnTimeout,
+		TLSHandshakeTimeout:   httpTLSHandshakeTimeout,
+		ExpectContinueTimeout: httpExpectContinueTimeout,
+		MaxConnsPerHost:       httpClientMaxConnsPerHost,
+		MaxIdleConnsPerHost:   httpClientMaxIdleConnsPerHost,
+	}
+
+	return &http.Client{
+		Transport: transport,
+		Timeout:   httpClientTimeout,
+	}
 }
 
 // Initialize sets up the client and loads/refreshes the token.
@@ -292,9 +334,9 @@ func (c *SchwabClient) Call(
 	c.copyHeaders(req, headers)
 
 	// For requests with no body, explicitly provide a GetBody implementation so
-	// the transport can transparently retry idempotent calls when a connection
-	// is closed with GOAWAY. This keeps high-concurrency market data calls from
-	// failing spuriously during server-initiated connection shutdown.
+	// the transport can transparently retry calls when a connection is closed
+	// with GOAWAY/stream errors. Without GetBody, the transport refuses to retry
+	// after writing the body (even when it's empty).
 	if req.GetBody == nil && (body == nil || body == http.NoBody) {
 		req.GetBody = func() (io.ReadCloser, error) {
 			return http.NoBody, nil
