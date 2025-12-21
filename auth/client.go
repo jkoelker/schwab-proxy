@@ -155,11 +155,6 @@ func (c *Client) GetTokenEndpointAuthMethod() string {
 	return "client_secret_post" // Allow client secret in POST body
 }
 
-// GetSecretString returns the client secret as a string.
-func (c *Client) GetSecretString() string {
-	return string(c.Secret)
-}
-
 // GenerateRandomString creates a random string of the specified length.
 func GenerateRandomString(length int) (string, error) {
 	bytes := make([]byte, length)

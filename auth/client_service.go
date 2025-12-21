@@ -2,19 +2,12 @@ package auth
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/jkoelker/schwab-proxy/storage"
-)
-
-// Sentinel errors for client service.
-var (
-	ErrClientInactive      = errors.New("client is inactive")
-	ErrInvalidClientSecret = errors.New("invalid client secret")
 )
 
 // ClientService manages client applications.
@@ -61,24 +54,6 @@ func (s *ClientService) GetClient(ctx context.Context, id string) (*Client, erro
 	}
 
 	return &client, nil
-}
-
-// ValidateClient checks if a client ID and secret are valid.
-func (s *ClientService) ValidateClient(ctx context.Context, id, secret string) (*Client, error) {
-	client, err := s.GetClient(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	if !client.Active {
-		return nil, ErrClientInactive
-	}
-
-	if client.GetSecretString() != secret {
-		return nil, ErrInvalidClientSecret
-	}
-
-	return client, nil
 }
 
 // UpdateClient updates a client's information.
