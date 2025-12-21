@@ -6,4 +6,5 @@
     ':semanticCommits',
   ],
   dependencyDashboard: true,
+  postUpdateOptions: ['gomodTidy'],
 }
