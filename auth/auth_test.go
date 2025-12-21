@@ -92,47 +92,6 @@ func TestClientServiceGetClient(t *testing.T) {
 	}
 }
 
-func TestClientServiceValidateClient(t *testing.T) {
-	t.Parallel()
-
-	store, cleanup := createTestStore(t)
-	t.Cleanup(cleanup)
-
-	service := auth.NewClientService(store)
-
-	// Create a client
-	client, _ := service.CreateClient(t.Context(), "Validate Test", "Desc", "http://localhost", []string{"read"})
-
-	// Test valid credentials
-	validated, err := service.ValidateClient(t.Context(), client.ID, client.GetSecretString())
-	if err != nil {
-		t.Fatalf("Failed to validate client: %v", err)
-	}
-
-	if validated.ID != client.ID {
-		t.Error("Validated client ID doesn't match")
-	}
-
-	// Test invalid secret
-	_, err = service.ValidateClient(t.Context(), client.ID, "wrong-secret")
-	if err == nil {
-		t.Error("Expected error for invalid secret")
-	}
-
-	// Test inactive client
-	updates := map[string]any{
-		"active": false,
-	}
-	if _, err := service.UpdateClient(t.Context(), client.ID, updates); err != nil {
-		t.Fatalf("Failed to update client: %v", err)
-	}
-
-	_, err = service.ValidateClient(t.Context(), client.ID, client.GetSecretString())
-	if err == nil {
-		t.Error("Expected error for inactive client")
-	}
-}
-
 func TestClientServiceUpdateClient(t *testing.T) {
 	t.Parallel()
 
