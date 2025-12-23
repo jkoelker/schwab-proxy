@@ -2,14 +2,25 @@
 # `dependabot` to manage them for us.
 FROM docker.io/golangci/golangci-lint:v2.6.2@sha256:d9469fcf8fdb1cd3790c5d0de2bb95640c4cd00c6670f541c3cb49edb744de49 as golangci-lint
 FROM ghcr.io/hadolint/hadolint:v2.14.0@sha256:27086352fd5e1907ea2b934eb1023f217c5ae087992eb59fde121dce9c9ff21e as hadolint
-FROM docker.io/golang:1.25.4-alpine@sha256:d3f0cf7723f3429e3f9ed846243970b20a2de7bae6a5b66fc5914e228d831bbb
+FROM docker.io/golang:1.25.5-alpine@sha256:ac09a5f469f307e5da71e766b0bd59c9c49ea460a528cc3e6686513d64a6f1fb
+
+# renovate: datasource=repology depName=alpine_3_23/bash versioning=loose
+ARG BASH_VERSION="5.3.3-r1"
+# renovate: datasource=repology depName=alpine_3_23/gcc versioning=loose
+ARG GCC_VERSION="15.2.0-r2"
+# renovate: datasource=repology depName=alpine_3_23/git versioning=loose
+ARG GIT_VERSION="2.52.0-r0"
+# renovate: datasource=repology depName=alpine_3_23/make versioning=loose
+ARG MAKE_VERSION="4.4.1-r3"
+# renovate: datasource=repology depName=alpine_3_23/musl-dev versioning=loose
+ARG MUSL_DEV_VERSION="1.2.5-r21"
 
 RUN apk add --no-cache \
-    bash==5.2.37-r0 \
-    gcc==14.2.0-r6 \
-    git==2.49.1-r0 \
-    make==4.4.1-r3 \
-    musl-dev==1.2.5-r10
+    bash="${BASH_VERSION}" \
+    gcc="${GCC_VERSION}" \
+    git="${GIT_VERSION}" \
+    make="${MAKE_VERSION}" \
+    musl-dev="${MUSL_DEV_VERSION}"
 
 COPY --from=hadolint /bin/hadolint /usr/local/bin/
 COPY --from=golangci-lint /usr/bin/golangci-lint /usr/local/bin/
