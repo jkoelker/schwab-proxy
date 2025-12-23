@@ -1,5 +1,5 @@
 ---
-name: Docker Build and Push
+name: Container Build and Push
 
 "on":
   push:
@@ -39,7 +39,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
             type=semver,pattern={{version}}
 
-      - name: Build and push Docker image
+      - name: Build and push Container image
         # yamllint disable-line rule:line-length rule:comments
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
         with:
