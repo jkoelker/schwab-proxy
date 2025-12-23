@@ -7,4 +7,15 @@
   ],
   dependencyDashboard: true,
   postUpdateOptions: ['gomodTidy'],
+  customManagers: [
+    {
+      customType: 'regex',
+      description: 'Update Alpine APK packages in Dockerfile.devkit',
+      fileMatch: ['Dockerfile\\.devkit$'],
+      matchStrings: [
+        '#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)( versioning=(?<versioning>.*?))?\\nARG .*?=\"(?<currentValue>.*)\"',
+      ],
+      versioningTemplate: '{{#if versioning}}{{{versioning}}}{{else}}loose{{/if}}',
+    },
+  ],
 }
