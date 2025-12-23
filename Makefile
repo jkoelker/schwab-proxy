@@ -63,8 +63,8 @@ ifneq ($(shell command -v $(CONTAINER_TOOL)),)
 	endif
 endif
 
-# Rebuild the devkit image on any changes to Dockerfile.devkit.
-$(DEVKIT_PHONY_FILE): Dockerfile.devkit
+# Rebuild the devkit image on any changes to Containerfile.devkit.
+$(DEVKIT_PHONY_FILE): Containerfile.devkit
 	@echo "Building $(DEVKIT_IMG)..."
 	$(CONTAINER_TOOL) build --tag "$(DEVKIT_IMG)" --file "$<" .
 	@touch "$@"
@@ -181,7 +181,7 @@ golangci-lint:
 
 dockerfile-lint:
 	hadolint --version
-	hadolint Dockerfile*
+	hadolint Containerfile*
 
 .PHONY: lint
 lint: WHAT=make golangci-lint dockerfile-lint
