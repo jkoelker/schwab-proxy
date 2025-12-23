@@ -29,7 +29,7 @@ const (
 	contentTypeJSON = "application/json"
 )
 
-// MockProviderClient implements api.ProviderClient for testing.
+// MockProviderClient implements schwabapi.ProviderClient for testing.
 type MockProviderClient struct {
 	initialized bool
 }
@@ -379,7 +379,7 @@ func TestRFC6750BearerTokenError(t *testing.T) {
 	t.Logf("RFC 6750 Bearer token error response verified: %d - %s", recorder.Code, recorder.Body.String())
 }
 
-// MockProviderClientWithHeaders implements api.ProviderClient with custom headers for testing.
+// MockProviderClientWithHeaders implements schwabapi.ProviderClient with custom headers for testing.
 type MockProviderClientWithHeaders struct {
 	MockProviderClient
 }

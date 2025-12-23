@@ -1,4 +1,4 @@
-package api
+package schwabapi
 
 import (
 	"context"

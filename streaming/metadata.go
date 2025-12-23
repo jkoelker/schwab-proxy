@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jkoelker/schwab-proxy/api"
+	"github.com/jkoelker/schwab-proxy/schwabapi"
 )
 
 var ErrNoMetadata = errors.New("no metadata available")
@@ -144,7 +144,7 @@ func (m *MetadataManager) GetMetadata() (*Metadata, error) {
 }
 
 // CreateMetadataFunc creates a metadata refresh function.
-func CreateMetadataFunc(ctx context.Context, schwabClient api.ProviderClient) func() (*Metadata, error) {
+func CreateMetadataFunc(ctx context.Context, schwabClient schwabapi.ProviderClient) func() (*Metadata, error) {
 	return func() (*Metadata, error) {
 		resp, err := schwabClient.Call(ctx, "GET", "/trader/v1/userPreference", nil, nil)
 		if err != nil {

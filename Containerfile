@@ -17,7 +17,6 @@ RUN go mod download && go mod verify
 # Copy only Go source files and directories for better caching
 # This prevents cache invalidation from non-Go file changes
 COPY admin/ ./admin/
-COPY api/ ./api/
 COPY auth/ ./auth/
 COPY cmd/ ./cmd/
 COPY config/ ./config/
@@ -28,6 +27,7 @@ COPY metrics/ ./metrics/
 COPY middleware/ ./middleware/
 COPY observability/ ./observability/
 COPY proxy/ ./proxy/
+COPY schwabapi/ ./schwabapi/
 COPY storage/ ./storage/
 COPY streaming/ ./streaming/
 COPY tls/ ./tls/

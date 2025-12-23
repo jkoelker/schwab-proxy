@@ -10,12 +10,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jkoelker/schwab-proxy/api"
 	"github.com/jkoelker/schwab-proxy/auth"
 	"github.com/jkoelker/schwab-proxy/config"
 	"github.com/jkoelker/schwab-proxy/health"
 	"github.com/jkoelker/schwab-proxy/log"
 	"github.com/jkoelker/schwab-proxy/observability"
+	"github.com/jkoelker/schwab-proxy/schwabapi"
 	"github.com/jkoelker/schwab-proxy/storage"
 	"github.com/jkoelker/schwab-proxy/streaming"
 )
@@ -36,7 +36,7 @@ const (
 type APIProxy struct {
 	mux           *http.ServeMux
 	cfg           *config.Config
-	schwabClient  api.ProviderClient
+	schwabClient  schwabapi.ProviderClient
 	tokenService  auth.TokenServicer
 	clientService *auth.ClientService
 	healthHandler *health.HTTPHandler
@@ -88,7 +88,7 @@ func deriveJWTSigningKey(cfg *config.Config) ([]byte, error) {
 func NewAPIProxy(
 	ctx context.Context,
 	cfg *config.Config,
-	schwabClient api.ProviderClient,
+	schwabClient schwabapi.ProviderClient,
 	tokenService auth.TokenServicer,
 	clientService *auth.ClientService,
 	store *storage.Store,
@@ -388,7 +388,7 @@ func (p *APIProxy) handleSetupCallback(writer http.ResponseWriter, request *http
 	}
 
 	// Type assert to access ValidateState method
-	schwabClient, ok := p.schwabClient.(*api.SchwabClient)
+	schwabClient, ok := p.schwabClient.(*schwabapi.SchwabClient)
 	if !ok {
 		http.Error(writer, "Invalid client type", http.StatusInternalServerError)
 

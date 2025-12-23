@@ -1,4 +1,4 @@
-package api_test
+package schwabapi_test
 
 import (
 	"context"
@@ -9,10 +9,10 @@ import (
 	"github.com/dgraph-io/badger/v4"
 	"golang.org/x/oauth2"
 
-	"github.com/jkoelker/schwab-proxy/api"
 	"github.com/jkoelker/schwab-proxy/auth"
 	"github.com/jkoelker/schwab-proxy/config"
 	"github.com/jkoelker/schwab-proxy/metrics"
+	"github.com/jkoelker/schwab-proxy/schwabapi"
 )
 
 // Mock token service for testing.
@@ -73,7 +73,7 @@ func createTestConfig() *config.Config {
 	}
 }
 
-func createTestSchwabClient(t *testing.T) (*api.SchwabClient, *mockTokenService) {
+func createTestSchwabClient(t *testing.T) (*schwabapi.SchwabClient, *mockTokenService) {
 	t.Helper()
 
 	// Initialize metrics for testing
@@ -84,7 +84,7 @@ func createTestSchwabClient(t *testing.T) (*api.SchwabClient, *mockTokenService)
 		tokens: make(map[string]*oauth2.Token),
 	}
 
-	client := api.NewSchwabClient(cfg, tokenService)
+	client := schwabapi.NewSchwabClient(cfg, tokenService)
 
 	return client, tokenService
 }
@@ -95,7 +95,7 @@ func TestNewSchwabClient(t *testing.T) {
 	cfg := createTestConfig()
 	tokenService := &mockTokenService{tokens: make(map[string]*oauth2.Token)}
 
-	client := api.NewSchwabClient(cfg, tokenService)
+	client := schwabapi.NewSchwabClient(cfg, tokenService)
 
 	if client == nil {
 		t.Fatal("Expected client to be created")
