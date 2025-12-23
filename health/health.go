@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/jkoelker/schwab-proxy/api"
 	"github.com/jkoelker/schwab-proxy/log"
+	"github.com/jkoelker/schwab-proxy/schwabapi"
 	"github.com/jkoelker/schwab-proxy/storage"
 )
 
@@ -212,11 +212,11 @@ func (sc *StorageChecker) Check(ctx context.Context) Check {
 
 // ProviderChecker checks Schwab API connectivity.
 type ProviderChecker struct {
-	client api.ProviderClient
+	client schwabapi.ProviderClient
 }
 
 // NewProviderChecker creates a new provider health checker.
-func NewProviderChecker(client api.ProviderClient) *ProviderChecker {
+func NewProviderChecker(client schwabapi.ProviderClient) *ProviderChecker {
 	return &ProviderChecker{client: client}
 }
 

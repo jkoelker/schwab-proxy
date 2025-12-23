@@ -12,13 +12,13 @@ import (
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/jkoelker/schwab-proxy/api"
 	"github.com/jkoelker/schwab-proxy/auth"
 	"github.com/jkoelker/schwab-proxy/cmd/schwab-proxy/commands"
 	"github.com/jkoelker/schwab-proxy/config"
 	"github.com/jkoelker/schwab-proxy/log"
 	"github.com/jkoelker/schwab-proxy/observability"
 	"github.com/jkoelker/schwab-proxy/proxy"
+	"github.com/jkoelker/schwab-proxy/schwabapi"
 	"github.com/jkoelker/schwab-proxy/storage"
 	tls "github.com/jkoelker/schwab-proxy/tls"
 )
@@ -163,13 +163,13 @@ func initializeStorage(ctx context.Context, cfg *config.Config) (*storage.Store,
 func initializeServices(ctx context.Context, cfg *config.Config, store *storage.Store) (
 	*auth.TokenService,
 	*auth.ClientService,
-	*api.SchwabClient,
+	*schwabapi.SchwabClient,
 ) {
 	tokenService := auth.NewTokenService(store)
 	clientService := auth.NewClientService(store)
 
 	// Initialize API client with provider-specific implementation
-	providerClient := api.NewSchwabClient(cfg, tokenService)
+	providerClient := schwabapi.NewSchwabClient(cfg, tokenService)
 
 	// Try to initialize with existing token
 	err := providerClient.Initialize(ctx)
@@ -199,7 +199,7 @@ func initializeTLS(ctx context.Context, cfg *config.Config) (*tls.Manager, error
 func createServer(
 	ctx context.Context,
 	cfg *config.Config,
-	providerClient *api.SchwabClient,
+	providerClient *schwabapi.SchwabClient,
 	tokenService *auth.TokenService,
 	clientService *auth.ClientService,
 	store *storage.Store,
