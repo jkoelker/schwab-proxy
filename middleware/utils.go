@@ -43,8 +43,8 @@ func GetRealIP(req *http.Request) string {
 	// Check X-Forwarded-For header (comma-separated list, first is original client)
 	if xff := req.Header.Get("X-Forwarded-For"); xff != "" {
 		// Take the first IP in the list
-		if idx := strings.Index(xff, ","); idx != -1 {
-			return strings.TrimSpace(xff[:idx])
+		if before, _, ok := strings.Cut(xff, ","); ok {
+			return strings.TrimSpace(before)
 		}
 
 		return strings.TrimSpace(xff)
