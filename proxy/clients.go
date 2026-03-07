@@ -78,6 +78,7 @@ func (p *APIProxy) handleRotateClientSecret(writer http.ResponseWriter, request 
 
 	writer.Header().Set("Content-Type", "application/json")
 
+	// #nosec G117 -- admin-only rotate flow intentionally returns the new plaintext secret once.
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
 
@@ -174,6 +175,7 @@ func (p *APIProxy) handleCreateClient(writer http.ResponseWriter, request *http.
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusCreated)
 
+	// #nosec G117 -- admin-only create flow intentionally returns the plaintext secret once.
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		http.Error(writer, "Failed to encode response", http.StatusInternalServerError)
 
