@@ -573,17 +573,13 @@ func TestStoreConcurrentAccess(t *testing.T) {
 
 	// Readers
 	for range 10 {
-		waitGroup.Add(1)
-
-		go func() {
-			defer waitGroup.Done()
-
+		waitGroup.Go(func() {
 			for range 10 {
 				var value int
 
 				_ = store.Get(ctx, "concurrent:test", &value)
 			}
-		}()
+		})
 	}
 
 	// Wait for all goroutines
