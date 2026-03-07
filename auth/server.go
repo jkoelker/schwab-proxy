@@ -143,8 +143,6 @@ func (s *Server) HandleAuthorizeRequest(writer http.ResponseWriter, request *htt
 func (s *Server) HandleTokenRequest(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	_ = request.ParseForm()
-
 	// Create a new session for the token request
 	session := &fosite.DefaultSession{
 		Extra: map[string]any{},

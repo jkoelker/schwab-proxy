@@ -130,7 +130,7 @@ func TestHTTPHandler_Liveness(t *testing.T) {
 	checker := health.NewManager(testVersion)
 	handler := health.NewHTTPHandler(checker)
 
-	req := httptest.NewRequest(http.MethodGet, "/health/live", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/health/live", nil)
 	recorder := httptest.NewRecorder()
 
 	handler.LivenessHandler(recorder, req)
@@ -151,7 +151,7 @@ func TestHTTPHandler_Readiness(t *testing.T) {
 	checker := health.NewManager(testVersion)
 	handler := health.NewHTTPHandler(checker)
 
-	req := httptest.NewRequest(http.MethodGet, "/health/ready", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/health/ready", nil)
 	recorder := httptest.NewRecorder()
 
 	handler.ReadinessHandler(recorder, req)

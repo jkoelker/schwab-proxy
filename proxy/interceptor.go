@@ -30,6 +30,7 @@ func forwardResponse(ctx context.Context, writer http.ResponseWriter, resp *Resp
 
 	writer.WriteHeader(resp.StatusCode)
 
+	// #nosec G705 -- intentional transparent proxy fallback for Schwab compatibility.
 	if _, err := writer.Write(resp.Body); err != nil {
 		log.Error(ctx, err, "Failed to write response")
 	}
