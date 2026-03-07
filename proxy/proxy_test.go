@@ -167,7 +167,7 @@ func testCreateClient(t *testing.T, proxyInstance *proxy.APIProxy) {
 		}
 
 		body, _ := json.Marshal(createReq)
-		req := httptest.NewRequest(http.MethodPost, "/api/clients", bytes.NewBuffer(body))
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/api/clients", bytes.NewBuffer(body))
 		req.Header.Set("Authorization", "Bearer test-admin-key")
 		req.Header.Set("Content-Type", "application/json")
 
@@ -209,7 +209,7 @@ func testListClients(t *testing.T, proxyInstance *proxy.APIProxy) {
 		}
 
 		body, _ := json.Marshal(createReq)
-		createRequest := httptest.NewRequest(http.MethodPost, "/api/clients", bytes.NewBuffer(body))
+		createRequest := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/api/clients", bytes.NewBuffer(body))
 		createRequest.Header.Set("Authorization", "Bearer test-admin-key")
 		createRequest.Header.Set("Content-Type", "application/json")
 
@@ -221,7 +221,7 @@ func testListClients(t *testing.T, proxyInstance *proxy.APIProxy) {
 		}
 
 		// Now test listing clients
-		req := httptest.NewRequest(http.MethodGet, "/api/clients", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/clients", nil)
 		req.Header.Set("Authorization", "Bearer test-admin-key")
 
 		writer := httptest.NewRecorder()
@@ -264,7 +264,7 @@ func testUnauthorizedAccess(t *testing.T, proxyInstance *proxy.APIProxy) {
 	t.Run("UnauthorizedAccess", func(t *testing.T) {
 		t.Parallel()
 
-		req := httptest.NewRequest(http.MethodGet, "/api/clients", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/clients", nil)
 		// No auth header
 
 		writer := httptest.NewRecorder()
@@ -291,7 +291,12 @@ func TestFositeOAuth2(t *testing.T) {
 		data.Set("client_id", "test-client")
 		data.Set("client_secret", "test-secret")
 
-		req := httptest.NewRequest(http.MethodPost, "/v1/oauth/token", strings.NewReader(data.Encode()))
+		req := httptest.NewRequestWithContext(
+			t.Context(),
+			http.MethodPost,
+			"/v1/oauth/token",
+			strings.NewReader(data.Encode()),
+		)
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 		writer := httptest.NewRecorder()
@@ -313,7 +318,7 @@ func TestFositeOAuth2(t *testing.T) {
 		// Test authorization endpoint
 		url := "/v1/oauth/authorize?response_type=code&client_id=test-client" +
 			"&redirect_uri=http://localhost:8080/callback&state=test-state"
-		req := httptest.NewRequest(http.MethodGet, url, nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
 
 		writer := httptest.NewRecorder()
 		proxyInstance.ServeHTTP(writer, req)
@@ -336,7 +341,7 @@ func TestRFC6750BearerTokenError(t *testing.T) {
 	t.Cleanup(cleanup)
 
 	// Test invalid token on market data endpoint
-	req := httptest.NewRequest(http.MethodGet, "/marketdata/v1/quotes", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/marketdata/v1/quotes", nil)
 	req.Header.Set("Authorization", "Bearer invalid-token")
 
 	recorder := httptest.NewRecorder()
