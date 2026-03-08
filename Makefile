@@ -177,7 +177,7 @@ tidy-ci: devkit
 .PHONY: golangci-lint
 golangci-lint:
 	golangci-lint --version
-	golangci-lint run --verbose --fix
+	golangci-lint run --verbose
 
 dockerfile-lint:
 	hadolint --version
