@@ -51,6 +51,21 @@ func TestFromContextFallback(t *testing.T) {
 	}
 }
 
+func TestMetricsWithoutInitialization(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+
+	meter := metrics.FromContext(ctx)
+	if meter == nil {
+		t.Fatal("expected no-op meter when metrics are uninitialized")
+	}
+
+	metrics.RecordCounter(ctx, "uninitialized_counter", 1, "test", "true")
+	metrics.RecordHistogram(ctx, "uninitialized_histogram", 42, "test", "true")
+	metrics.RecordGauge(ctx, "uninitialized_gauge", 7, "test", "true")
+}
+
 func TestCounterFromContext(t *testing.T) {
 	t.Parallel()
 
