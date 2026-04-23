@@ -12,9 +12,9 @@
   customManagers: [
     {
       customType: 'regex',
-      description: 'Update Alpine APK packages in Dockerfile.devkit',
+      description: 'Update Alpine APK packages in Containerfile.devkit',
       managerFilePatterns: [
-        '/Dockerfile\\.devkit$/',
+        '/Containerfile\\.devkit$/',
       ],
       matchStrings: [
         '#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)( versioning=(?<versioning>.*?))?\\nARG .*?="(?<currentValue>.*)"',
