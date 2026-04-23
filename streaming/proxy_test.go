@@ -26,7 +26,9 @@ func TestProxy(t *testing.T) {
 		OAuth2AuthCodeExpiry:     10 * time.Minute,
 	}
 
-	authServer, err := auth.NewServer(mockStore, testConfig, signingKey)
+	ctx := t.Context()
+
+	authServer, err := auth.NewServer(ctx, mockStore, testConfig, signingKey)
 	if err != nil {
 		t.Fatalf("Failed to create auth server: %v", err)
 	}
@@ -45,8 +47,6 @@ func TestProxy(t *testing.T) {
 	proxy := streaming.NewProxy(tokenManager, authServer, metadataFunc)
 
 	// Test Start
-	ctx := context.Background()
-
 	err = proxy.Start(ctx)
 	if err != nil {
 		t.Fatalf("Start failed: %v", err)

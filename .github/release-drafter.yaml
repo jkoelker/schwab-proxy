@@ -54,7 +54,10 @@ version-resolver:
 autolabeler:
   - label: "automation"
     title:
-      - "/^(build|ci|perf|refactor|test).*/i"
+      - "/^(build|ci).*/i"
+  - label: "performance"
+    title:
+      - "/^(perf).*/i"
   - label: "enhancement"
     title:
       - "/^(style).*/i"
@@ -72,7 +75,7 @@ autolabeler:
       - "/^(infrastructure).*/i"
   - label: "maintenance"
     title:
-      - "/^(chore|maintenance).*/i"
+      - "/^(chore|maintenance|refactor|test).*/i"
   - label: "revert"
     title:
       - "/^(revert).*/i"

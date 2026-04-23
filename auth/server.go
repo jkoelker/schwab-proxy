@@ -47,7 +47,7 @@ type Server struct {
 }
 
 // NewServer creates a new OAuth2 server using Fosite.
-func NewServer(store StorageInterface, cfg *config.Config, jwtSigningKey []byte) (*Server, error) {
+func NewServer(ctx context.Context, store StorageInterface, cfg *config.Config, jwtSigningKey []byte) (*Server, error) {
 	storage := &Storage{
 		storage: store,
 		cfg:     cfg,
@@ -59,10 +59,16 @@ func NewServer(store StorageInterface, cfg *config.Config, jwtSigningKey []byte)
 		RefreshTokenLifespan:       cfg.OAuth2RefreshTokenExpiry,
 		AuthorizeCodeLifespan:      cfg.OAuth2AuthCodeExpiry,
 		GlobalSecret:               jwtSigningKey,
+		ScopeStrategy:              fosite.WildcardScopeStrategy,
+		AudienceMatchingStrategy:   fosite.DefaultAudienceMatchingStrategy,
 		SendDebugMessagesToClients: cfg.SendDebugMessagesToClients,
 	}
 
 	// Create OAuth2 provider with both client credentials and authorization code flows
+	// Set mutable Fosite defaults explicitly before serving requests so concurrent
+	// OAuth requests do not race on lazy config initialization.
+	fositeConfig.GetSecretsHasher(ctx)
+
 	provider := compose.Compose(
 		fositeConfig,
 		storage,
