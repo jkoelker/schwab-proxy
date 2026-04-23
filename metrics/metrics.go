@@ -7,6 +7,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	metricnoop "go.opentelemetry.io/otel/metric/noop"
 )
 
 // contextKey is a custom type for context keys to avoid collisions.
@@ -22,7 +23,10 @@ const (
 
 var (
 	// defaultMeter is the fallback meter when none is found in context.
-	defaultMeter metric.Meter //nolint:gochecknoglobals // Thread-safe: protected by sync.Once
+	//nolint:gochecknoglobals // Safe no-op fallback when metrics are disabled
+	defaultMeter = metricnoop.NewMeterProvider().Meter(
+		"noop",
+	)
 
 	// meterOnce ensures we only initialize the default meter once.
 	meterOnce sync.Once //nolint:gochecknoglobals // Thread-safe: sync.Once is inherently safe
