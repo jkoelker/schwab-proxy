@@ -150,11 +150,6 @@ func (c *Client) GetAudience() fosite.Arguments {
 	return c.Audience
 }
 
-// GetTokenEndpointAuthMethod returns the client's token endpoint authentication method.
-func (c *Client) GetTokenEndpointAuthMethod() string {
-	return "client_secret_post" // Allow client secret in POST body
-}
-
 // GenerateRandomString creates a random string of the specified length.
 func GenerateRandomString(length int) (string, error) {
 	bytes := make([]byte, length)

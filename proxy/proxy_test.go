@@ -3,6 +3,7 @@ package proxy_test
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -120,7 +121,7 @@ func createTestProxy(t *testing.T) (*proxy.APIProxy, func()) {
 
 	// Create proxy with nil OTel providers for testing
 	proxyInstance, err := proxy.NewAPIProxy(
-		context.Background(),
+		ctx,
 		cfg,
 		mockProvider,
 		tokenService,
@@ -191,6 +192,40 @@ func testCreateClient(t *testing.T, proxyInstance *proxy.APIProxy) {
 			t.Error("Expected secret to be returned")
 		}
 	})
+}
+
+func createOAuthClient(t *testing.T, proxyInstance *proxy.APIProxy) proxy.ClientWithSecretResponse {
+	t.Helper()
+
+	createReq := proxy.CreateClientRequest{
+		Name:        "OAuth Test Client",
+		Description: "Client for OAuth token auth tests",
+		RedirectURI: "http://localhost:3000/callback",
+		Scopes:      []string{"read"},
+	}
+
+	body, err := json.Marshal(createReq)
+	if err != nil {
+		t.Fatalf("failed to marshal create request: %v", err)
+	}
+
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/api/clients", bytes.NewBuffer(body))
+	req.Header.Set("Authorization", "Bearer test-admin-key")
+	req.Header.Set("Content-Type", "application/json")
+
+	writer := httptest.NewRecorder()
+	proxyInstance.ServeHTTP(writer, req)
+
+	if writer.Code != http.StatusCreated {
+		t.Fatalf("expected create client status %d, got %d: %s", http.StatusCreated, writer.Code, writer.Body.String())
+	}
+
+	var response proxy.ClientWithSecretResponse
+	if err := json.NewDecoder(writer.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode create client response: %v", err)
+	}
+
+	return response
 }
 
 func testListClients(t *testing.T, proxyInstance *proxy.APIProxy) {
@@ -309,6 +344,60 @@ func TestFositeOAuth2(t *testing.T) {
 		}
 
 		t.Logf("OAuth2 endpoint response: %d - %s", writer.Code, writer.Body.String())
+	})
+
+	t.Run("TokenEndpointAcceptsHTTPBasicAuth", func(t *testing.T) {
+		t.Parallel()
+
+		client := createOAuthClient(t, proxyInstance)
+		data := url.Values{}
+		data.Set("grant_type", "refresh_token")
+		data.Set("refresh_token", "dummy-refresh-token")
+
+		req := httptest.NewRequestWithContext(
+			t.Context(),
+			http.MethodPost,
+			"/v1/oauth/token",
+			strings.NewReader(data.Encode()),
+		)
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.Header.Set(
+			"Authorization",
+			"Basic "+base64.StdEncoding.EncodeToString([]byte(client.ID+":"+client.Secret)),
+		)
+
+		writer := httptest.NewRecorder()
+		proxyInstance.ServeHTTP(writer, req)
+
+		if strings.Contains(writer.Body.String(), `"invalid_client"`) {
+			t.Fatalf("expected HTTP Basic client auth to be accepted, got invalid_client: %s", writer.Body.String())
+		}
+	})
+
+	t.Run("TokenEndpointStillAcceptsPostBodyAuth", func(t *testing.T) {
+		t.Parallel()
+
+		client := createOAuthClient(t, proxyInstance)
+		data := url.Values{}
+		data.Set("grant_type", "refresh_token")
+		data.Set("refresh_token", "dummy-refresh-token")
+		data.Set("client_id", client.ID)
+		data.Set("client_secret", client.Secret)
+
+		req := httptest.NewRequestWithContext(
+			t.Context(),
+			http.MethodPost,
+			"/v1/oauth/token",
+			strings.NewReader(data.Encode()),
+		)
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		writer := httptest.NewRecorder()
+		proxyInstance.ServeHTTP(writer, req)
+
+		if strings.Contains(writer.Body.String(), `"invalid_client"`) {
+			t.Fatalf("expected POST-body client auth to remain accepted, got invalid_client: %s", writer.Body.String())
+		}
 	})
 
 	// Test that authorization endpoint is available (for authorization code flow)

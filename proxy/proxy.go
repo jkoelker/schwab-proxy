@@ -108,7 +108,7 @@ func NewAPIProxy(
 		return nil, err
 	}
 
-	server, err := auth.NewServer(storageAdapter, cfg, jwtSigningKey)
+	server, err := auth.NewServer(ctx, storageAdapter, cfg, jwtSigningKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create OAuth2 server: %w", err)
 	}
