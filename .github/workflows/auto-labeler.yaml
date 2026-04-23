@@ -14,7 +14,6 @@ name: Auto Labeler
 permissions:
   contents: read
   pull-requests: write
-  issues: write
 
 jobs:
   main:
@@ -24,9 +23,8 @@ jobs:
 
     steps:
       # yamllint disable-line rule:line-length rule:comments
-      - uses: release-drafter/release-drafter@44a942e465867c7465b76aa808ddca6e0acae5da # v7.1.0
+      - uses: release-drafter/release-drafter/autolabeler@44a942e465867c7465b76aa808ddca6e0acae5da # v7.1.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           config-name: release-drafter.yaml
-          disable-releaser: true
