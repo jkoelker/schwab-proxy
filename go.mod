@@ -7,7 +7,7 @@ tool gotest.tools/gotestsum
 require (
 	github.com/caarlos0/env/v11 v11.4.0
 	github.com/dgraph-io/badger/v4 v4.9.1
-	github.com/fsnotify/fsnotify v1.9.0
+	github.com/fsnotify/fsnotify v1.10.1
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/ory/fosite v0.49.0
