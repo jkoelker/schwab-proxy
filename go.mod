@@ -1,6 +1,6 @@
 module github.com/jkoelker/schwab-proxy
 
-go 1.25.0
+go 1.26.0
 
 tool gotest.tools/gotestsum
 
@@ -21,7 +21,7 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.43.0
 	go.opentelemetry.io/otel/trace v1.43.0
 	golang.org/x/crypto v0.50.0
-	golang.org/x/oauth2 v0.36.0
+	golang.org/x/oauth2 v0.37.0
 )
 
 require (
