@@ -13,7 +13,7 @@ ARG GIT_VERSION="2.52.0-r0"
 # renovate: datasource=repology depName=alpine_3_23/make versioning=loose
 ARG MAKE_VERSION="4.4.1-r3"
 # renovate: datasource=repology depName=alpine_3_23/musl versioning=loose
-ARG MUSL_VERSION="1.2.5-r23"
+ARG MUSL_VERSION="1.2.5-r24"
 # renovate: datasource=repology depName=alpine_3_23/musl-dev versioning=loose
 ARG MUSL_DEV_VERSION="1.2.5-r23"
 
