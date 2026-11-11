@@ -9,7 +9,7 @@ ARG BASH_VERSION="5.3.3-r1"
 # renovate: datasource=repology depName=alpine_3_23/gcc versioning=loose
 ARG GCC_VERSION="15.2.0-r2"
 # renovate: datasource=repology depName=alpine_3_23/git versioning=loose
-ARG GIT_VERSION="2.52.0-r0"
+ARG GIT_VERSION="2.52.1-r0"
 # renovate: datasource=repology depName=alpine_3_23/make versioning=loose
 ARG MAKE_VERSION="4.4.1-r3"
 # renovate: datasource=repology depName=alpine_3_23/musl versioning=loose
