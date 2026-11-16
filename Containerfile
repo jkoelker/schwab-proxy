@@ -1,5 +1,5 @@
 # Build stage
-FROM docker.io/golang:1.26.2-alpine@sha256:f85330846cde1e57ca9ec309382da3b8e6ae3ab943d2739500e08c86393a21b1 AS builder
+FROM docker.io/golang:1.27.4-alpine@sha256:70bd7ddea8b6cbe5d6943cde279d6b67feb10cc924fb9100d1d8757c1575b280 AS builder
 
 # Set build environment for static linking
 ENV CGO_ENABLED=0 \
