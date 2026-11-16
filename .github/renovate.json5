@@ -5,7 +5,9 @@
     ':disableRateLimiting',
     ':semanticCommits',
   ],
-  dependencyDashboard: true,
+  dependencyDashboard: {
+    enabled: true,
+  },
   postUpdateOptions: [
     'gomodTidy',
   ],
